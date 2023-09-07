@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/0xPolygon/cdk-data-availability/config"
-	"github.com/0xPolygon/cdk-validium-node/etherman"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkdatacommittee"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkvalidium"
-	"github.com/0xPolygon/cdk-validium-node/log"
+	"github.com/0xPolygonHermez/zkevm-node/etherman"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/datacommittee"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -43,18 +43,18 @@ func newEtherman(cfg config.L1Config) (*etherman.Client, error) {
 		log.Errorf("error connecting to %s: %+v", cfg.WsURL, err)
 		return nil, err
 	}
-	cdkValidium, err := cdkvalidium.NewCdkvalidium(common.HexToAddress(cfg.CDKValidiumAddress), ethClient)
+	zkevm, err := polygonzkevm.NewPolygonzkevm(common.HexToAddress(cfg.CDKValidiumAddress), ethClient)
 	if err != nil {
 		return nil, err
 	}
 	dataCommittee, err :=
-		cdkdatacommittee.NewCdkdatacommittee(common.HexToAddress(cfg.DataCommitteeAddress), ethClient)
+		datacommittee.NewDatacommittee(common.HexToAddress(cfg.DataCommitteeAddress), ethClient)
 	if err != nil {
 		return nil, err
 	}
 	return &etherman.Client{
 		EthClient:     ethClient,
-		CDKValidium:   cdkValidium,
+		ZkEVM:         zkevm,
 		DataCommittee: dataCommittee,
 	}, nil
 }

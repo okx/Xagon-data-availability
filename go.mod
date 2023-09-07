@@ -3,7 +3,7 @@ module github.com/0xPolygon/cdk-data-availability
 go 1.19
 
 require (
-	github.com/0xPolygon/cdk-validium-node v0.0.0-20230831094457-8d07bc9043a8
+	github.com/0xPolygonHermez/zkevm-node v0.1.2
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/gorilla/websocket v1.5.0
@@ -58,9 +58,7 @@ require (
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
-	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0 // indirect
 	github.com/iden3/go-iden3-crypto v0.0.15 // indirect
-	github.com/invopop/jsonschema v0.7.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -126,3 +124,7 @@ require (
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/zkevm-node v0.1.3-0.20230907073230-c7cb95f069e0
+
+replace github.com/0xPolygon/cdk-data-availability => ./
