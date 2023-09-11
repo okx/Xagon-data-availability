@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/jackc/pgx/v4"
 )
@@ -310,7 +311,13 @@ func parseEvent(event *polygonzkevm.PolygonzkevmSequenceBatches, txData []byte) 
 
 	var keys []common.Hash
 	for _, batch := range batches {
-		keys = append(keys, batch.TransactionsHash)
+		if len(batch.Transactions) > 0 {
+			keys = append(keys, crypto.Keccak256Hash(batch.Transactions))
+			log.Infof("parse dac batch timestamp:%v", batch.Timestamp)
+		} else {
+			keys = append(keys, batch.TransactionsHash)
+			log.Infof("parse no dac batch timestamp:%v", batch.Timestamp)
+		}
 	}
 	return event.Raw.BlockNumber, keys, nil
 }
