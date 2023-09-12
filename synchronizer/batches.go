@@ -2,6 +2,7 @@ package synchronizer
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"math/rand"
 	"strings"
@@ -312,11 +313,12 @@ func parseEvent(event *polygonzkevm.PolygonzkevmSequenceBatches, txData []byte) 
 	var keys []common.Hash
 	for _, batch := range batches {
 		if len(batch.Transactions) > 0 {
-			keys = append(keys, crypto.Keccak256Hash(batch.Transactions))
-			log.Infof("parse dac batch timestamp:%v", batch.Timestamp)
+			hash := crypto.Keccak256Hash(batch.Transactions)
+			keys = append(keys, hash)
+			log.Infof("parse dac, batch num:", event.NumBatch, ", batch timestamp:", batch.Timestamp, "calc hash:", hash.String())
 		} else {
 			keys = append(keys, batch.TransactionsHash)
-			log.Infof("parse no dac batch timestamp:%v", batch.Timestamp)
+			log.Infof("parse no dac, batch num:", event.NumBatch, ", batch timestamp:", batch.Timestamp, "hash:", hex.EncodeToString(batch.TransactionsHash[:]))
 		}
 	}
 	return event.Raw.BlockNumber, keys, nil
