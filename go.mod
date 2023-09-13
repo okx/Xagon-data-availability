@@ -127,6 +127,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/zkevm-node v0.2.6-RC3.0.20230913104716-0b14b41e0852
+replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/zkevm-node v0.2.6-RC3.0.20230913114452-30c6720ce8a2
 
 replace github.com/0xPolygon/cdk-data-availability => ./
