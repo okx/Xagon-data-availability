@@ -28,7 +28,7 @@ func (*DummyPool) GetGasPrices(ctx context.Context) (pool.GasPrices, error) {
 	panic("unimplemented")
 }
 
-//// CheckPolicy foo bar
+// CheckPolicy foo bar
 //func (d *DummyPool) CheckPolicy(ctx context.Context, policy pool.PolicyName, address common.Address) (bool, error) {
 //	return false, errors.New(notImplemented)
 //}
@@ -286,7 +286,7 @@ func (d *DummyState) GetBatchByNumber(ctx context.Context, batchNumber uint64, d
 
 // GetTransactionsByBatchNumber foo
 func (d *DummyState) GetTransactionsByBatchNumber(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) (txs []types.Transaction, effectivePercentages []uint8, err error) {
-	return nil, nil, errors.New(notImplemented)
+	return
 }
 
 // GetVirtualBatch foo
@@ -304,14 +304,17 @@ func (d *DummyState) GetExitRootByGlobalExitRoot(ctx context.Context, ger common
 	return nil, errors.New(notImplemented)
 }
 
+// GetFinalizedL2BlockNumber foo
 func (d *DummyState) GetFinalizedL2BlockNumber(ctx context.Context, l1FinalizedBlockNumber uint64, dbTx pgx.Tx) (uint64, error) {
 	return 0, errors.New(notImplemented)
 }
 
-func (d *DummyState) GetL2BlocksByBatchNumber(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) ([]types.Block, error) {
-	return nil, errors.New(notImplemented)
-}
-
+// GetSafeL2BlockNumber foo
 func (d *DummyState) GetSafeL2BlockNumber(ctx context.Context, l1SafeBlockNumber uint64, dbTx pgx.Tx) (uint64, error) {
 	return 0, errors.New(notImplemented)
+}
+
+// GetL2BlocksByBatchNumber foo
+func (d *DummyState) GetL2BlocksByBatchNumber(ctx context.Context, batchNumber uint64, dbTx pgx.Tx) ([]types.Block, error) {
+	return nil, errors.New(notImplemented)
 }

@@ -2,14 +2,10 @@ package synchronizer
 
 import (
 	"context"
-	"encoding/hex"
-	"encoding/json"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/0xPolygon/cdk-data-availability/client"
 	"github.com/0xPolygon/cdk-data-availability/config"
 	"github.com/0xPolygon/cdk-data-availability/db"
 	"github.com/0xPolygon/cdk-data-availability/offchaindata"
@@ -17,38 +13,45 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
 	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
 	"github.com/0xPolygonHermez/zkevm-node/log"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/jackc/pgx/v4"
 )
+
+const defaultBlockBatchSize = 32
 
 // BatchSynchronizer watches for batch events, checks if they are "locally" stored, then retrieves and stores missing data
 type BatchSynchronizer struct {
-	watcher
-	self      common.Address
-	db        *db.DB
-	committee map[common.Address]etherman.DataCommitteeMember
-	lock      sync.Mutex
-	reorgs    <-chan BlockReorg
+	client         *etherman.Client
+	stop           chan struct{}
+	retry          time.Duration
+	blockBatchSize uint
+	self           common.Address
+	db             *db.DB
+	committee      map[common.Address]etherman.DataCommitteeMember
+	lock           sync.Mutex
+	reorgs         <-chan BlockReorg
+	events         chan *polygonzkevm.PolygonzkevmSequenceBatches
 }
-
-const dbTimeout = 2 * time.Second
-const rpcTimeout = 3 * time.Second
 
 // NewBatchSynchronizer creates the BatchSynchronizer
 func NewBatchSynchronizer(cfg config.L1Config, self common.Address, db *db.DB, reorgs <-chan BlockReorg) (*BatchSynchronizer, error) {
-	watcher, err := newWatcher(cfg)
+	ethClient, err := newRPCEtherman(cfg)
 	if err != nil {
 		return nil, err
 	}
+	if cfg.BlockBatchSize == 0 {
+		log.Infof("block batch size is not set, setting to default %d", defaultBlockBatchSize)
+		cfg.BlockBatchSize = defaultBlockBatchSize
+	}
 	synchronizer := &BatchSynchronizer{
-		watcher: *watcher,
-		self:    self,
-		db:      db,
-		reorgs:  reorgs,
+		client:         ethClient,
+		stop:           make(chan struct{}),
+		retry:          cfg.RetryPeriod.Duration,
+		blockBatchSize: cfg.BlockBatchSize,
+		self:           self,
+		db:             db,
+		reorgs:         reorgs,
+		events:         make(chan *polygonzkevm.PolygonzkevmSequenceBatches),
 	}
 	err = synchronizer.resolveCommittee()
 	if err != nil {
@@ -75,112 +78,126 @@ func (bs *BatchSynchronizer) resolveCommittee() error {
 	return nil
 }
 
-// Start starts the BatchSynchronizer event subscription
+// Start starts the synchronizer
 func (bs *BatchSynchronizer) Start() {
-	log.Info("starting batch synchronizer")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	resubscribe := true
-	for resubscribe {
-		events := make(chan *polygonzkevm.PolygonzkevmSequenceBatches)
-		sub := bs.untilSubscribed(ctx, events)
-		resubscribe = bs.consumeEvents(ctx, sub, events)
-		sub.Unsubscribe()
-		close(events)
-	}
+	log.Infof("starting batch synchronizer, DAC addr: %v", bs.self)
+	go bs.consumeEvents()
+	go bs.produceEvents()
+	go bs.handleReorgs()
 }
 
-func (bs *BatchSynchronizer) consumeEvents(
-	ctx context.Context, sub event.Subscription, events chan *polygonzkevm.PolygonzkevmSequenceBatches) bool {
+// Stop stops the synchronizer
+func (bs *BatchSynchronizer) Stop() {
+	close(bs.events)
+	close(bs.stop)
+}
+
+func (bs *BatchSynchronizer) handleReorgs() {
 	for {
 		select {
-		case sb := <-events:
-			err := bs.handleSequenceBatches(sb)
-			if err != nil {
-				log.Errorf("failed to process batches: %v", err)
-				return true
-			}
 		case r := <-bs.reorgs:
-			err := bs.setStartBlock(r.Number)
+			latest, err := getStartBlock(bs.db)
+			if err != nil {
+				log.Errorf("could not determine latest processed block: %v", err)
+				continue
+			}
+			if latest < r.Number {
+				// only reset start block if necessary
+				continue
+			}
+			err = rewindStartBlock(bs.db, r.Number)
 			if err != nil {
 				log.Errorf("failed to store new start block to %d: %v", r.Number, err)
 			}
-			return true
-		case err := <-sub.Err():
-			log.Warnf("subscription error: %v", err)
-			return true
-			// warn error
-		case <-ctx.Done():
-			handleSubscriptionContextDone(ctx)
-			return true
 		case <-bs.stop:
-			return false // stop resubscribing
+			return
 		}
 	}
 }
 
-func (bs *BatchSynchronizer) untilSubscribed(ctx context.Context, events chan *polygonzkevm.PolygonzkevmSequenceBatches) event.Subscription {
-	start, err := bs.getStartBlock()
-	for err != nil {
-		<-time.After(bs.retry)
-		start, err = bs.getStartBlock()
-	}
-
-	opts := &bind.WatchOpts{Context: ctx, Start: &start}
-	sub, err := bs.client.ZkEVM.WatchSequenceBatches(opts, events, nil)
-	// retry until established
-	for err != nil {
-		<-time.After(bs.retry)
-		sub, err = bs.client.ZkEVM.WatchSequenceBatches(opts, events, nil)
-		if err != nil {
-			log.Errorf("error subscribing to sequence batch events, retrying: %v", err)
+func (bs *BatchSynchronizer) produceEvents() {
+	log.Info("starting event producer")
+	for {
+		delay := time.NewTimer(bs.retry)
+		select {
+		case <-delay.C:
+			if err := bs.filterEvents(); err != nil {
+				log.Errorf("error filtering events: %v", err)
+			}
+		case <-bs.stop:
+			return
 		}
 	}
-	return sub
 }
 
-func (bs *BatchSynchronizer) getStartBlock() (uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-
-	start, err := bs.db.GetLastProcessedBlock(ctx)
-	if err != nil {
-		log.Errorf("error retrieving last processed block, starting from 0: %v", err)
-	}
-	if start > 0 {
-		start = start - 1 // since a block may have been partially processed
-	}
-	return start, err
-}
-
-func (bs *BatchSynchronizer) setStartBlock(lca uint64) error {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-
-	rows, err := bs.db.ResetLastProcessedBlock(ctx, lca)
+// Start an iterator from last block processed, picking off SequenceBatches events
+func (bs *BatchSynchronizer) filterEvents() error {
+	start, err := getStartBlock(bs.db)
 	if err != nil {
 		return err
 	}
-	if rows > 0 {
-		log.Infof("rewound %d blocks", rows)
+
+	end := start + uint64(bs.blockBatchSize)
+
+	// get the latest block number
+	header, err := bs.client.EthClient.HeaderByNumber(context.TODO(), nil)
+	if err != nil {
+		log.Errorf("failed to determine latest block number", err)
+		return err
+	}
+	// we don't want to scan beyond latest block
+	if end > header.Number.Uint64() {
+		end = header.Number.Uint64()
+	}
+
+	iter, err := bs.client.ZkEVM.FilterSequenceBatches(
+		&bind.FilterOpts{
+			Start:   start,
+			End:     &end,
+			Context: context.TODO(),
+		}, nil)
+	if err != nil {
+		return err
+	}
+	for iter.Next() {
+		if iter.Error() != nil {
+			return iter.Error()
+		}
+		bs.events <- iter.Event
+	}
+
+	// advance start block
+	err = setStartBlock(bs.db, end)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-// Stop stops the BatchSynchronizer
-func (bs *BatchSynchronizer) Stop() {
-	close(bs.stop)
+func (bs *BatchSynchronizer) consumeEvents() {
+	log.Info("starting event consumer")
+	for {
+		select {
+		case sb := <-bs.events:
+			if err := bs.handleEvent(sb); err != nil {
+				log.Errorf("failed to handle event: %v", err)
+			}
+		case <-bs.stop:
+			return
+		}
+	}
 }
 
-func (bs *BatchSynchronizer) handleSequenceBatches(event *polygonzkevm.PolygonzkevmSequenceBatches) error {
+func (bs *BatchSynchronizer) handleEvent(event *polygonzkevm.PolygonzkevmSequenceBatches) error {
 	ctx, cancel := context.WithTimeout(context.Background(), rpcTimeout)
 	defer cancel()
+
 	tx, _, err := bs.client.GetTx(ctx, event.Raw.TxHash)
 	if err != nil {
 		return err
 	}
 	txData := tx.Data()
-	block, keys, err := parseEvent(event, txData)
+	_, keys, err := ParseEvent(event, txData)
 	if err != nil {
 		return err
 	}
@@ -188,63 +205,34 @@ func (bs *BatchSynchronizer) handleSequenceBatches(event *polygonzkevm.Polygonzk
 	// collect keys that need to be resolved
 	var missing []common.Hash
 	for _, key := range keys {
-		if !bs.exists(key) {
+		if !exists(bs.db, key) { // this could be a single query that takes the whole list and returns missing ones
 			missing = append(missing, key)
 		}
 	}
-	return bs.resolveAndStore(block, missing)
-}
+	if len(missing) == 0 {
+		return nil
+	}
 
-func (bs *BatchSynchronizer) exists(key common.Hash) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-	return bs.db.Exists(ctx, key)
-}
-
-func (bs *BatchSynchronizer) resolveAndStore(block uint64, keys []common.Hash) error {
 	var data []offchaindata.OffChainData
-	for _, key := range keys {
-		value, err := bs.resolve(key)
+	for _, key := range missing {
+		log.Infof("resolving missing key %v", key.Hex())
+		var value offchaindata.OffChainData
+		value, err = bs.resolve(key)
 		if err != nil {
-			return err // return so that the block does not get updated in sync info
+			return err
 		}
 		data = append(data, value)
 	}
-	return bs.store(block, data)
-}
 
-func (bs *BatchSynchronizer) store(block uint64, data []offchaindata.OffChainData) error {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-	var (
-		dbTx pgx.Tx
-		err  error
-	)
-	if dbTx, err = bs.db.BeginStateTransaction(ctx); err != nil {
-		return err
-	}
-	if err = bs.db.StoreOffChainData(ctx, data, dbTx); err != nil {
-		rollback(ctx, err, dbTx)
-		return err
-	}
-	if err = bs.db.StoreLastProcessedBlock(ctx, block, dbTx); err != nil {
-		rollback(ctx, err, dbTx)
-		return err
-	}
-	if err = dbTx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func rollback(ctx context.Context, err error, dbTx pgx.Tx) {
-	if txErr := dbTx.Rollback(ctx); txErr != nil {
-		log.Errorf("failed to roll back transaction after error %v : %v", err, txErr)
-	}
+	// Finally, store the data
+	return store(bs.db, data)
 }
 
 func (bs *BatchSynchronizer) resolve(key common.Hash) (offchaindata.OffChainData, error) {
+	log.Debugf("resolving missing data for key %v", key.Hex())
 	if len(bs.committee) == 0 {
+		// committee is resolved again once all members are evicted. They can be evicted
+		// for not having data, or their config being malformed
 		err := bs.resolveCommittee()
 		if err != nil {
 			return offchaindata.OffChainData{}, err
@@ -258,9 +246,14 @@ func (bs *BatchSynchronizer) resolve(key common.Hash) (offchaindata.OffChainData
 	// iterate through them randomly until data is resolved
 	for _, r := range rand.Perm(len(members)) {
 		member := members[r]
+		if member.URL == "" || member.Addr == common.HexToAddress("0x0") || member.Addr == bs.self {
+			delete(bs.committee, member.Addr)
+			continue // malformed committee, skip what is known to be wrong
+		}
+		log.Infof("trying DAC %s: %s", member.Addr.Hex(), member.URL)
 		value, err := resolveWithMember(key, member)
 		if err != nil {
-			log.Warnf("resolve member %v failed, removing from local committee cache: %v", member.Addr, err)
+			log.Warnf("error resolving, continuing: %v", err)
 			delete(bs.committee, member.Addr)
 			continue // did not have data or errored out
 		}
