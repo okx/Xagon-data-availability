@@ -4,13 +4,13 @@ networks:
     name: custom
 services:
 
-  cdk-data-availability:
-    container_name: cdk-data-availability
+  xagon-data-availability:
+    container_name: xagon-data-availability
     restart: unless-stopped
     depends_on:
-      cdk-data-availability-db:
+      xagon-data-availability-db:
         condition: service_healthy
-    image: cdk-data-availability
+    image: xagon-data-availability
     deploy:
       resources:
         limits:
@@ -25,10 +25,10 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/cdk-data-availability run --cfg /app/config.toml"
+      - "/app/xagon-data-availability run --cfg /app/config.toml"
 
-  cdk-data-availability-db:
-    container_name: cdk-data-availability-db
+  xagon-data-availability-db:
+    container_name: xagon-data-availability-db
     restart: unless-stopped
     image: postgres
     healthcheck:

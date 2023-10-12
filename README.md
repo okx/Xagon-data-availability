@@ -1,7 +1,7 @@
 # Xagon Data Availability
 ### Data Availability Layer for Xagon Validium
 
-The cdk-data-availability project is a specialized Data Availability Node (DA Node) that is part of Xagon's CDK (Chain Development Kit) Validium.
+The Xagon-data-availability project is a specialized Data Availability Node (DA Node) that is part of Xagon's CDK (Chain Development Kit) Validium.
 
 ## Overview of Validium
 The Xagon Validium solution is made up of several components; start with the [Xagon Node](https://github.com/okx/Xagon-node). For quick reference, the complete list of components are outlined below:
@@ -10,7 +10,7 @@ The Xagon Validium solution is made up of several components; start with the [Xa
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [Xagon Node](https://github.com/okx/Xagon-node)           | Node implementation for the Xagon networks in Validium mode            |
 | [Xagon Contracts](https://github.com/okx/Xagon-contracts) | Smart contract implementation for the Xagon networks in Validium mode |
-| [Xagon Data Availability](https://github.com/okx/cdk-data-availability)   | Data availability implementation for the Xagon networks          |
+| [Xagon Data Availability](https://github.com/okx/Xagon-data-availability)   | Data availability implementation for the Xagon networks          |
 | [Prover / Executor](https://github.com/okx/Xagon-prover)          | zkEVM engine and prover implementation                               |
 | [Bridge Service](https://github.com/okx/Xagon-bridge-service)     | Bridge service implementation for Xagon networks                       |
 

@@ -90,7 +90,7 @@ func TestDataCommittee(t *testing.T) {
 		membs = append(membs, member{
 			addr: crypto.PubkeyToAddress(pk.PublicKey),
 			pk:   pk,
-			url:  fmt.Sprintf("http://cdk-data-availability-%d:420%d", i, i),
+			url:  fmt.Sprintf("http://xagon-data-availability-%d:420%d", i, i),
 			i:    i,
 		})
 	}
@@ -321,13 +321,13 @@ func startDACMember(t *testing.T, m member) {
 	cmd := exec.Command(
 		"docker", "run", "-d",
 		"-p", fmt.Sprintf("%d:%d", port, port),
-		"--name", "cdk-data-availability-"+strconv.Itoa(m.i),
+		"--name", "xagon-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
 		"--network", "custom",
 		dacNodeContainer,
 		"/bin/sh", "-c",
-		"/app/cdk-data-availability run --cfg /app/config.json",
+		"/app/xagon-data-availability run --cfg /app/config.json",
 	)
 	out, err = cmd.CombinedOutput()
 	require.NoError(t, err, string(out))
@@ -337,10 +337,10 @@ func startDACMember(t *testing.T, m member) {
 
 func stopDACMember(t *testing.T, m member) {
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "cdk-data-availability-"+strconv.Itoa(m.i),
+		"docker", "kill", "xagon-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "cdk-data-availability-"+strconv.Itoa(m.i),
+		"docker", "rm", "xagon-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
 		"docker", "kill", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),

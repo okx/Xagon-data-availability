@@ -21,7 +21,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const appName = "cdk-data-availability"
+const appName = "xagon-data-availability"
 
 var (
 	configFileFlag = cli.StringFlag{
