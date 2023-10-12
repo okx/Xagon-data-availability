@@ -13,7 +13,6 @@ The Xagon Validium solution is made up of several components; start with the [Xa
 | [Xagon Data Availability](https://github.com/okx/cdk-data-availability)   | Data availability implementation for the Xagon networks          |
 | [Prover / Executor](https://github.com/okx/Xagon-prover)          | zkEVM engine and prover implementation                               |
 | [Bridge Service](https://github.com/okx/Xagon-bridge-service)     | Bridge service implementation for Xagon networks                       |
-| [Bridge UI](https://github.com/0xPolygonHermez/zkevm-bridge-ui)               | UI for the Xagon networks bridge                                       |
 
 ---
 
