@@ -6,10 +6,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/0xPolygon/cdk-validium-node/jsonrpc"
-	"github.com/0xPolygon/cdk-validium-node/pool"
-	"github.com/0xPolygon/cdk-validium-node/state"
-	"github.com/0xPolygon/cdk-validium-node/state/runtime"
+	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
+	"github.com/0xPolygonHermez/zkevm-node/pool"
+	"github.com/0xPolygonHermez/zkevm-node/state"
+	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/websocket"
@@ -29,9 +29,9 @@ func (*DummyPool) GetGasPrices(ctx context.Context) (pool.GasPrices, error) {
 }
 
 // CheckPolicy foo bar
-func (d *DummyPool) CheckPolicy(ctx context.Context, policy pool.PolicyName, address common.Address) (bool, error) {
-	return false, errors.New(notImplemented)
-}
+//func (d *DummyPool) CheckPolicy(ctx context.Context, policy pool.PolicyName, address common.Address) (bool, error) {
+//	return false, errors.New(notImplemented)
+//}
 
 // AddTx foo
 func (d *DummyPool) AddTx(ctx context.Context, tx types.Transaction, ip string) error {

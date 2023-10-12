@@ -16,13 +16,13 @@ import (
 
 	"github.com/0xPolygon/cdk-data-availability/config"
 	"github.com/0xPolygon/cdk-data-availability/synchronizer"
-	cTypes "github.com/0xPolygon/cdk-validium-node/config/types"
-	"github.com/0xPolygon/cdk-validium-node/db"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkdatacommittee"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkvalidium"
-	"github.com/0xPolygon/cdk-validium-node/jsonrpc"
-	"github.com/0xPolygon/cdk-validium-node/log"
-	"github.com/0xPolygon/cdk-validium-node/test/operations"
+	cTypes "github.com/0xPolygonHermez/zkevm-node/config/types"
+	"github.com/0xPolygonHermez/zkevm-node/db"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/datacommittee"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
+	"github.com/0xPolygonHermez/zkevm-node/log"
+	"github.com/0xPolygonHermez/zkevm-node/test/operations"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	eTypes "github.com/ethereum/go-ethereum/core/types"
@@ -74,7 +74,7 @@ func TestDataCommittee(t *testing.T) {
 	require.NoError(t, err)
 	clientL1, err := ethclient.Dial(operations.DefaultL1NetworkURL)
 	require.NoError(t, err)
-	dacSC, err := cdkdatacommittee.NewCdkdatacommittee(
+	dacSC, err := datacommittee.NewDatacommittee(
 		common.HexToAddress(operations.DefaultL1DataCommitteeContract),
 		clientL1,
 	)
@@ -188,9 +188,9 @@ func TestDataCommittee(t *testing.T) {
 	}
 }
 
-func getSequenceBatchesEventIterator(clientL1 *ethclient.Client) (*cdkvalidium.CdkvalidiumSequenceBatchesIterator, error) {
+func getSequenceBatchesEventIterator(clientL1 *ethclient.Client) (*polygonzkevm.PolygonzkevmSequenceBatchesIterator, error) {
 	// Get the expected data keys of the batches from what was submitted to L1
-	cdkValidium, err := cdkvalidium.NewCdkvalidium(common.HexToAddress(operations.DefaultL1CDKValidiumSmartContract), clientL1)
+	cdkValidium, err := polygonzkevm.NewPolygonzkevm(common.HexToAddress(operations.DefaultL1ZkEVMSmartContract), clientL1)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func getSequenceBatchesEventIterator(clientL1 *ethclient.Client) (*cdkvalidium.C
 	return iter, nil
 }
 
-func getSequenceBatchesKeys(clientL1 *ethclient.Client, event *cdkvalidium.CdkvalidiumSequenceBatches) ([]common.Hash, error) {
+func getSequenceBatchesKeys(clientL1 *ethclient.Client, event *polygonzkevm.PolygonzkevmSequenceBatches) ([]common.Hash, error) {
 	ctx := context.Background()
 	tx, _, err := clientL1.TransactionByHash(ctx, event.Raw.TxHash)
 	if err != nil {
@@ -264,7 +264,7 @@ func startDACMember(t *testing.T, m member) {
 		L1: config.L1Config{
 			RpcURL:               "http://cdk-validium-mock-l1-network:8545",
 			WsURL:                "ws://cdk-validium-mock-l1-network:8546",
-			CDKValidiumAddress:   operations.DefaultL1CDKValidiumSmartContract,
+			CDKValidiumAddress:   operations.DefaultL1ZkEVMSmartContract,
 			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
 			Timeout:              cTypes.Duration{Duration: time.Second},
 			RetryPeriod:          cTypes.Duration{Duration: time.Second},

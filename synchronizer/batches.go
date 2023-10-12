@@ -9,10 +9,10 @@ import (
 	"github.com/0xPolygon/cdk-data-availability/config"
 	"github.com/0xPolygon/cdk-data-availability/db"
 	"github.com/0xPolygon/cdk-data-availability/offchaindata"
-	"github.com/0xPolygon/cdk-validium-node/etherman"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkvalidium"
-	"github.com/0xPolygon/cdk-validium-node/jsonrpc/types"
-	"github.com/0xPolygon/cdk-validium-node/log"
+	"github.com/0xPolygonHermez/zkevm-node/etherman"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
+	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -30,7 +30,7 @@ type BatchSynchronizer struct {
 	committee      map[common.Address]etherman.DataCommitteeMember
 	lock           sync.Mutex
 	reorgs         <-chan BlockReorg
-	events         chan *cdkvalidium.CdkvalidiumSequenceBatches
+	events         chan *polygonzkevm.PolygonzkevmSequenceBatches
 }
 
 // NewBatchSynchronizer creates the BatchSynchronizer
@@ -51,7 +51,7 @@ func NewBatchSynchronizer(cfg config.L1Config, self common.Address, db *db.DB, r
 		self:           self,
 		db:             db,
 		reorgs:         reorgs,
-		events:         make(chan *cdkvalidium.CdkvalidiumSequenceBatches),
+		events:         make(chan *polygonzkevm.PolygonzkevmSequenceBatches),
 	}
 	err = synchronizer.resolveCommittee()
 	if err != nil {
@@ -150,7 +150,7 @@ func (bs *BatchSynchronizer) filterEvents() error {
 		end = header.Number.Uint64()
 	}
 
-	iter, err := bs.client.CDKValidium.FilterSequenceBatches(
+	iter, err := bs.client.ZkEVM.FilterSequenceBatches(
 		&bind.FilterOpts{
 			Start:   start,
 			End:     &end,
@@ -188,7 +188,7 @@ func (bs *BatchSynchronizer) consumeEvents() {
 	}
 }
 
-func (bs *BatchSynchronizer) handleEvent(event *cdkvalidium.CdkvalidiumSequenceBatches) error {
+func (bs *BatchSynchronizer) handleEvent(event *polygonzkevm.PolygonzkevmSequenceBatches) error {
 	ctx, cancel := context.WithTimeout(context.Background(), rpcTimeout)
 	defer cancel()
 

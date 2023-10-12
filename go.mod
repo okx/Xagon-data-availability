@@ -3,7 +3,7 @@ module github.com/0xPolygon/cdk-data-availability
 go 1.19
 
 require (
-	github.com/0xPolygon/cdk-validium-node v0.0.1
+	github.com/0xPolygonHermez/zkevm-node v0.1.2
 	github.com/ethereum/go-ethereum v1.12.1
 	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/gorilla/websocket v1.5.0
@@ -135,3 +135,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/zkevm-node v0.2.6-RC3.0.20230914054446-3fbafbb20cf0
+
+replace github.com/0xPolygon/cdk-data-availability => ./

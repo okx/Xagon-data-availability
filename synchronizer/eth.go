@@ -2,16 +2,18 @@ package synchronizer
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"strings"
 
 	"github.com/0xPolygon/cdk-data-availability/config"
-	"github.com/0xPolygon/cdk-validium-node/etherman"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkdatacommittee"
-	"github.com/0xPolygon/cdk-validium-node/etherman/smartcontracts/cdkvalidium"
-	"github.com/0xPolygon/cdk-validium-node/log"
+	"github.com/0xPolygonHermez/zkevm-node/etherman"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/datacommittee"
+	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -32,25 +34,25 @@ func newEtherman(cfg config.L1Config, url string) (*etherman.Client, error) {
 		log.Errorf("error connecting to %s: %+v", url, err)
 		return nil, err
 	}
-	cdkValidium, err := cdkvalidium.NewCdkvalidium(common.HexToAddress(cfg.CDKValidiumAddress), ethClient)
+	zkevm, err := polygonzkevm.NewPolygonzkevm(common.HexToAddress(cfg.CDKValidiumAddress), ethClient)
 	if err != nil {
 		return nil, err
 	}
 	dataCommittee, err :=
-		cdkdatacommittee.NewCdkdatacommittee(common.HexToAddress(cfg.DataCommitteeAddress), ethClient)
+		datacommittee.NewDatacommittee(common.HexToAddress(cfg.DataCommitteeAddress), ethClient)
 	if err != nil {
 		return nil, err
 	}
 	return &etherman.Client{
 		EthClient:     ethClient,
-		CDKValidium:   cdkValidium,
+		ZkEVM:         zkevm,
 		DataCommittee: dataCommittee,
 	}, nil
 }
 
 // ParseEvent unpacks the keys in a SequenceBatches event
-func ParseEvent(event *cdkvalidium.CdkvalidiumSequenceBatches, txData []byte) (uint64, []common.Hash, error) {
-	a, err := abi.JSON(strings.NewReader(cdkvalidium.CdkvalidiumABI))
+func ParseEvent(event *polygonzkevm.PolygonzkevmSequenceBatches, txData []byte) (uint64, []common.Hash, error) {
+	a, err := abi.JSON(strings.NewReader(polygonzkevm.PolygonzkevmMetaData.ABI))
 	if err != nil {
 		return 0, nil, err
 	}
@@ -62,7 +64,7 @@ func ParseEvent(event *cdkvalidium.CdkvalidiumSequenceBatches, txData []byte) (u
 	if err != nil {
 		return 0, nil, err
 	}
-	var batches []cdkvalidium.CDKValidiumBatchData
+	var batches []polygonzkevm.PolygonZkEVMBatchData
 	bytes, err := json.Marshal(data[0])
 	if err != nil {
 		return 0, nil, err
@@ -74,7 +76,14 @@ func ParseEvent(event *cdkvalidium.CdkvalidiumSequenceBatches, txData []byte) (u
 
 	var keys []common.Hash
 	for _, batch := range batches {
-		keys = append(keys, batch.TransactionsHash)
+		if len(batch.Transactions) > 0 {
+			hash := crypto.Keccak256Hash(batch.Transactions)
+			keys = append(keys, hash)
+			log.Infof("parse no dac, batch num:%v:batch timestamp:%v, calc hash:%s", event.NumBatch, batch.Timestamp, hash.String())
+		} else {
+			keys = append(keys, batch.TransactionsHash)
+			log.Infof("parse use dac, batch num:%v, batch timestamp:%v, hash:%s", event.NumBatch, batch.Timestamp, hex.EncodeToString(batch.TransactionsHash[:]))
+		}
 	}
 	return event.Raw.BlockNumber, keys, nil
 }
