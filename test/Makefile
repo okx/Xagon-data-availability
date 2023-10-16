@@ -19,8 +19,8 @@ run: ## Runs a full node for e2e
 	docker compose up -d cdk-validium-aggregator
 	docker compose up -d cdk-validium-json-rpc
 	sleep 2
-	docker compose up -d xagon-data-availability-db
-	docker compose up -d xagon-data-availability
+	docker compose up -d xgon-data-availability-db
+	docker compose up -d xgon-data-availability
 
 .PHONY: stop
 stop: ## Stop a full data node
@@ -89,7 +89,7 @@ stop-approve-matic: ## Stops approve in node container
 .PHONY: stop-dac-nodes
 stop-dac-nodes:
 	for i in 0 1 2 3 4 ; do \
-  		(docker kill xagon-data-availability-$$i || true) && (docker rm xagon-data-availability-$$i || true) ; \
+  		(docker kill xgon-data-availability-$$i || true) && (docker rm xgon-data-availability-$$i || true) ; \
   	done
 
 .PHONY: stop-dac-dbs
