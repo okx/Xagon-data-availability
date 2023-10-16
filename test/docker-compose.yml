@@ -4,13 +4,13 @@ networks:
     name: custom
 services:
 
-  xagon-data-availability:
-    container_name: xagon-data-availability
+  xgon-data-availability:
+    container_name: xgon-data-availability
     restart: unless-stopped
     depends_on:
-      xagon-data-availability-db:
+      xgon-data-availability-db:
         condition: service_healthy
-    image: xagon-data-availability
+    image: xgon-data-availability
     deploy:
       resources:
         limits:
@@ -25,10 +25,10 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/xagon-data-availability run --cfg /app/config.toml"
+      - "/app/xgon-data-availability run --cfg /app/config.toml"
 
-  xagon-data-availability-db:
-    container_name: xagon-data-availability-db
+  xgon-data-availability-db:
+    container_name: xgon-data-availability-db
     restart: unless-stopped
     image: postgres
     healthcheck:
