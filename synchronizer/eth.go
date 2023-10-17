@@ -79,10 +79,10 @@ func ParseEvent(event *polygonzkevm.PolygonzkevmSequenceBatches, txData []byte) 
 		if len(batch.Transactions) > 0 {
 			hash := crypto.Keccak256Hash(batch.Transactions)
 			keys = append(keys, hash)
-			log.Infof("parse no dac, batch num:%v:batch timestamp:%v, calc hash:%s", event.NumBatch, batch.Timestamp, hash.String())
+			log.Infof("parse rollup mode, batch num:%v:batch timestamp:%v, calc hash:%s", event.NumBatch, batch.Timestamp, hash.String())
 		} else {
 			keys = append(keys, batch.TransactionsHash)
-			log.Infof("parse use dac, batch num:%v, batch timestamp:%v, hash:%s", event.NumBatch, batch.Timestamp, hex.EncodeToString(batch.TransactionsHash[:]))
+			log.Infof("parse validium mode, batch num:%v, batch timestamp:%v, hash:%s", event.NumBatch, batch.Timestamp, hex.EncodeToString(batch.TransactionsHash[:]))
 		}
 	}
 	return event.Raw.BlockNumber, keys, nil
