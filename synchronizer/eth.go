@@ -34,7 +34,7 @@ func newEtherman(cfg config.L1Config, url string) (*etherman.Client, error) {
 		log.Errorf("error connecting to %s: %+v", url, err)
 		return nil, err
 	}
-	zkevm, err := polygonzkevm.NewPolygonzkevm(common.HexToAddress(cfg.CDKValidiumAddress), ethClient)
+	zkevm, err := polygonzkevm.NewPolygonzkevm(common.HexToAddress(cfg.ZkEVMAddress), ethClient)
 	if err != nil {
 		return nil, err
 	}

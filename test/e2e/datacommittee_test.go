@@ -264,7 +264,7 @@ func startDACMember(t *testing.T, m member) {
 		L1: config.L1Config{
 			RpcURL:               "http://cdk-validium-mock-l1-network:8545",
 			WsURL:                "ws://cdk-validium-mock-l1-network:8546",
-			CDKValidiumAddress:   operations.DefaultL1ZkEVMSmartContract,
+			ZkEVMAddress:         operations.DefaultL1ZkEVMSmartContract,
 			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
 			Timeout:              cTypes.Duration{Duration: time.Second},
 			RetryPeriod:          cTypes.Duration{Duration: time.Second},
