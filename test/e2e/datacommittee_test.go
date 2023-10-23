@@ -262,8 +262,8 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			RpcURL:               "http://cdk-validium-mock-l1-network:8545",
-			WsURL:                "ws://cdk-validium-mock-l1-network:8546",
+			RpcURL:               "http://xgon-mock-l1-network:8545",
+			WsURL:                "ws://xgon-mock-l1-network:8546",
 			ZkEVMAddress:         operations.DefaultL1ZkEVMSmartContract,
 			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
 			Timeout:              cTypes.Duration{Duration: time.Second},
@@ -277,7 +277,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "cdk-validium-data-node-db-" + strconv.Itoa(m.i),
+			Host:      "xgon-data-node-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -343,9 +343,9 @@ func stopDACMember(t *testing.T, m member) {
 		"docker", "rm", "xgon-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "xgon-data-node-db-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "xgon-data-node-db-"+strconv.Itoa(m.i),
 	).Run())
 }
