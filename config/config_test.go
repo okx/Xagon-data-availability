@@ -26,7 +26,7 @@ func Test_Defaults(t *testing.T) {
 		},
 		{
 			path:          "L1.ZkEVMAddress",
-			expectedValue: "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+			expectedValue: "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C",
 		},
 		{
 			path:          "L1.Timeout",

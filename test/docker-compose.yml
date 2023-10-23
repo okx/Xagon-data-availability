@@ -49,7 +49,7 @@ services:
 
   xgon-mock-l1-network:
     container_name: xgon-mock-l1-network
-    image: hermeznetwork/geth-xgon-contracts:v0.0.1
+    image: zjg555543/xgon-geth-contracts:v0.1.0_202310231226
     healthcheck:
       test: [ "CMD-SHELL", "geth attach --datadir /geth_data --exec eth.blockNumber" ]
       interval: 10s
@@ -155,7 +155,7 @@ services:
 
   xgon-sequencer:
     container_name: xgon-sequencer
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     ports:
       - 9092:9091 # needed if metrics enabled
       - 6060:6060
@@ -172,7 +172,7 @@ services:
 
   xgon-approve:
     container_name: xgon-approve
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     environment:
       - CDK_VALIDIUM_NODE_STATEDB_HOST=xgon-state-db
     volumes:
@@ -186,7 +186,7 @@ services:
 
   xgon-sequence-sender:
     container_name: xgon-sequence-sender
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     environment:
       - CDK_VALIDIUM_NODE_STATEDB_HOST=xgon-state-db
       - CDK_VALIDIUM_NODE_POOL_DB_HOST=xgon-pool-db
@@ -202,7 +202,7 @@ services:
 
   xgon-json-rpc:
     container_name: xgon-json-rpc
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     ports:
       - 8123:8123
       - 8133:8133 # needed if WebSockets enabled
@@ -220,7 +220,7 @@ services:
 
   xgon-aggregator:
     container_name: xgon-aggregator
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     ports:
       - 50081:50081
       - 9093:9091 # needed if metrics enabled
@@ -237,7 +237,7 @@ services:
 
   xgon-sync:
     container_name: xgon-sync
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     environment:
       - CDK_VALIDIUM_NODE_STATEDB_HOST=xgon-state-db
     volumes:
@@ -250,7 +250,7 @@ services:
 
   xgon-eth-tx-manager:
     container_name: xgon-eth-tx-manager
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     ports:
       - 9094:9091 # needed if metrics enabled
     environment:
@@ -267,7 +267,7 @@ services:
 
   xgon-l2gaspricer:
     container_name: xgon-l2gaspricer
-    image: hermeznetwork/xgon-node:v0.0.1
+    image: zjg555543/xgon-node:v0.1.0_4d65247a
     environment:
       - CDK_VALIDIUM_NODE_POOL_DB_HOST=xgon-pool-db
     volumes:

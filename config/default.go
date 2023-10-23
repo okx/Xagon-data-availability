@@ -14,7 +14,7 @@ PrivateKey = {Path = "/pk/test-member.keystore", Password = "testonly"}
 [L1]
 WsURL = "ws://127.0.0.1:8546"
 RpcURL = "http://127.0.0.1:8545"
-ZkEVMAddress = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+ZkEVMAddress = "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C"
 DataCommitteeAddress = "0x0"
 Timeout = "1m"
 RetryPeriod = "5s"
