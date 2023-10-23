@@ -1,11 +1,12 @@
 {
-  "l1Config" : {
-		"chainId": 1337,
-		"polygonZkEVMAddress": "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C",
-		"maticTokenAddress": "0xcFE6D77a653b988203BfAc9C6a69eA9D583bdC2b",
-		"polygonZkEVMGlobalExitRootAddress": "0xEd236da21Ff62bC7B62608AdB818da49E8549fa7",
-    "cdkDataCommitteeContract": "0x6Ae5b0863dBF3477335c0102DBF432aFf04ceb22"
-	},
+  "l1Config": {
+    "chainId": 1337,
+    "polygonZkEVMAddress": "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C",
+    "maticTokenAddress": "0xcFE6D77a653b988203BfAc9C6a69eA9D583bdC2b",
+    "polygonZkEVMGlobalExitRootAddress": "0xEd236da21Ff62bC7B62608AdB818da49E8549fa7",
+    "dataCommitteeContract": "0x6Ae5b0863dBF3477335c0102DBF432aFf04ceb22"
+  },
+  "genesisBlockNumber":  221,
   "root": "0x8afa05faea2fdff269d6b31e486d2843235db22ce71d648400a7c765647e18d3",
  "genesis": [
   {
@@ -118,4 +119,4 @@
    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   }
  ]
- }
+}
