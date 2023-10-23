@@ -25,7 +25,7 @@ func Test_Defaults(t *testing.T) {
 			expectedValue: "http://127.0.0.1:8545",
 		},
 		{
-			path:          "L1.CDKValidiumAddress",
+			path:          "L1.ZkEVMAddress",
 			expectedValue: "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
 		},
 		{
