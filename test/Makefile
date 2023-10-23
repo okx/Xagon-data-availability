@@ -5,6 +5,7 @@ run: ## Runs a full node for e2e
 	docker compose up -d xgon-state-db
 	docker compose up -d xgon-pool-db
 	docker compose up -d xgon-event-db
+	docker compose up -d xgon-data-availability-db
 	docker compose up -d xgon-mock-l1-network
 	sleep 1
 	docker compose up -d xgon-prover
@@ -19,7 +20,6 @@ run: ## Runs a full node for e2e
 	docker compose up -d xgon-aggregator
 	docker compose up -d xgon-json-rpc
 	sleep 2
-	docker compose up -d xgon-data-availability-db
 	docker compose up -d xgon-data-availability
 
 .PHONY: stop

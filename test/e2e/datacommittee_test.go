@@ -41,7 +41,7 @@ const (
 	ksFile           = "/tmp/pkey"
 	cfgFile          = "/tmp/dacnodeconfigfile.json"
 	ksPass           = "pass"
-	dacNodeContainer = "cdk-data-availability"
+	dacNodeContainer = "xgon-data-availability"
 	stopDacs         = true
 )
 
@@ -68,7 +68,7 @@ func TestDataCommittee(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	authL2, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL2ChainID)
 	require.NoError(t, err)
-	authL1, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL1ChainID)
+	authL1, err := operations.GetAuth(operations.DefaultL1AdminPrivateKey, operations.DefaultL1ChainID)
 	require.NoError(t, err)
 	clientL2, err := ethclient.Dial(operations.DefaultL2NetworkURL)
 	require.NoError(t, err)
