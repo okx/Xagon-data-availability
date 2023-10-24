@@ -297,7 +297,7 @@ func startDACMember(t *testing.T, m member) {
 		"-e", "POSTGRES_PASSWORD=committee_password",
 		"-e", "POSTGRES_USER=committee_user",
 		"-p", fmt.Sprintf("553%d:5432", m.i),
-		"--network", "custom",
+		"--network", "xgon-data-availability",
 		"postgres", "-N", "500",
 	)
 	out, err := dbCmd.CombinedOutput()
@@ -324,7 +324,7 @@ func startDACMember(t *testing.T, m member) {
 		"--name", "xgon-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
-		"--network", "custom",
+		"--network", "xgon-data-availability",
 		dacNodeContainer,
 		"/bin/sh", "-c",
 		"/app/xgon-data-availability run --cfg /app/config.json",
