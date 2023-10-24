@@ -277,7 +277,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "xgon-data-node-db-" + strconv.Itoa(m.i),
+			Host:      "xgon-data-availability-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -343,9 +343,9 @@ func stopDACMember(t *testing.T, m member) {
 		"docker", "rm", "xgon-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "xgon-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "xgon-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "xgon-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "xgon-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 }

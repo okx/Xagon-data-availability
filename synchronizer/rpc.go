@@ -7,7 +7,6 @@ import (
 	"github.com/0xPolygon/cdk-data-availability/client"
 	"github.com/0xPolygon/cdk-data-availability/offchaindata"
 	"github.com/0xPolygonHermez/zkevm-node/etherman"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
 	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -22,15 +21,8 @@ func resolveWithMember(key common.Hash, member etherman.DataCommitteeMember) (of
 	log.Debugf("trying member %v at %v for key %v", member.Addr.Hex(), member.URL, key.Hex())
 
 	bytes, err := cm.GetOffChainData(ctx, key)
-	if len(bytes) == 0 {
-		err = types.NewRPCError(types.NotFoundErrorCode, "data not found")
-	}
-	var data offchaindata.OffChainData
-	if len(bytes) > 0 {
-		data = offchaindata.OffChainData{
-			Key:   key,
-			Value: bytes,
-		}
-	}
-	return data, err
+	return offchaindata.OffChainData{
+		Key:   key,
+		Value: bytes,
+	}, err
 }
