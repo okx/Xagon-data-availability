@@ -30,4 +30,4 @@ The off-chain data is stored in a distributed manner and managed by a data avail
 
 ## License
 
-The cdk-validium-node project is licensed under the [GNU Affero General Public License](LICENSE) free software license.
+The xgon-node project is licensed under the [GNU Affero General Public License](LICENSE) free software license.

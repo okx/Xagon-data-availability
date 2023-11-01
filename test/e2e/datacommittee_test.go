@@ -41,7 +41,7 @@ const (
 	ksFile           = "/tmp/pkey"
 	cfgFile          = "/tmp/dacnodeconfigfile.json"
 	ksPass           = "pass"
-	dacNodeContainer = "cdk-data-availability"
+	dacNodeContainer = "xgon-data-availability"
 	stopDacs         = true
 )
 
@@ -68,7 +68,7 @@ func TestDataCommittee(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	authL2, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL2ChainID)
 	require.NoError(t, err)
-	authL1, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL1ChainID)
+	authL1, err := operations.GetAuth(operations.DefaultL1AdminPrivateKey, operations.DefaultL1ChainID)
 	require.NoError(t, err)
 	clientL2, err := ethclient.Dial(operations.DefaultL2NetworkURL)
 	require.NoError(t, err)
@@ -262,8 +262,8 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			RpcURL:               "http://cdk-validium-mock-l1-network:8545",
-			WsURL:                "ws://cdk-validium-mock-l1-network:8546",
+			RpcURL:               "http://xgon-mock-l1-network:8545",
+			WsURL:                "ws://xgon-mock-l1-network:8546",
 			ZkEVMAddress:         operations.DefaultL1ZkEVMSmartContract,
 			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
 			Timeout:              cTypes.Duration{Duration: time.Second},
@@ -277,7 +277,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "cdk-validium-data-node-db-" + strconv.Itoa(m.i),
+			Host:      "xgon-data-availability-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -297,7 +297,7 @@ func startDACMember(t *testing.T, m member) {
 		"-e", "POSTGRES_PASSWORD=committee_password",
 		"-e", "POSTGRES_USER=committee_user",
 		"-p", fmt.Sprintf("553%d:5432", m.i),
-		"--network", "custom",
+		"--network", "xgon-data-availability",
 		"postgres", "-N", "500",
 	)
 	out, err := dbCmd.CombinedOutput()
@@ -324,7 +324,7 @@ func startDACMember(t *testing.T, m member) {
 		"--name", "xgon-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
-		"--network", "custom",
+		"--network", "xgon-data-availability",
 		dacNodeContainer,
 		"/bin/sh", "-c",
 		"/app/xgon-data-availability run --cfg /app/config.json",
@@ -343,9 +343,9 @@ func stopDACMember(t *testing.T, m member) {
 		"docker", "rm", "xgon-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "xgon-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "xgon-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 }

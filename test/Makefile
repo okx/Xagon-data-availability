@@ -2,24 +2,24 @@ STOP := docker compose down
 
 .PHONY: run
 run: ## Runs a full node for e2e
-	docker compose up -d cdk-validium-state-db
-	docker compose up -d cdk-validium-pool-db
-	docker compose up -d cdk-validium-event-db
-	docker compose up -d cdk-validium-mock-l1-network
-	sleep 1
-	docker compose up -d cdk-validium-prover
-	docker compose up -d cdk-validium-approve
-	sleep 3
-	docker compose up -d cdk-validium-sync
-	sleep 2
-	docker compose up -d cdk-validium-eth-tx-manager
-	docker compose up -d cdk-validium-sequencer
-	docker compose up -d cdk-validium-sequence-sender
-	docker compose up -d cdk-validium-l2gaspricer
-	docker compose up -d cdk-validium-aggregator
-	docker compose up -d cdk-validium-json-rpc
-	sleep 2
+	docker compose up -d xgon-state-db
+	docker compose up -d xgon-pool-db
+	docker compose up -d xgon-event-db
 	docker compose up -d xgon-data-availability-db
+	docker compose up -d xgon-mock-l1-network
+	sleep 1
+	docker compose up -d xgon-prover
+	docker compose up -d xgon-approve
+	sleep 3
+	docker compose up -d xgon-sync
+	sleep 2
+	docker compose up -d xgon-eth-tx-manager
+	docker compose up -d xgon-sequencer
+	docker compose up -d xgon-sequence-sender
+	docker compose up -d xgon-l2gaspricer
+	docker compose up -d xgon-aggregator
+	docker compose up -d xgon-json-rpc
+	sleep 2
 	docker compose up -d xgon-data-availability
 
 .PHONY: stop
@@ -28,7 +28,6 @@ stop: ## Stop a full data node
 
 .PHONY: test-e2e
 test-e2e: run ## Runs the E2E tests
-	go test -v ./e2e/...
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -count=1 -race -v -p 1 -timeout 600s ./e2e/...
 
 .PHONY: test-unit
@@ -50,40 +49,40 @@ help: ## Prints this help
 
 .PHONY: run-node
 run-node: ## Runs the node
-	docker compose up -d cdk-validium-eth-tx-manager
-	docker compose up -d cdk-validium-sync
+	docker compose up -d xgon-eth-tx-manager
+	docker compose up -d xgon-sync
 	sleep 2
-	docker compose up -d cdk-validium-sequencer
-	docker compose up -d cdk-validium-sequence-sender
-	docker compose up -d cdk-validium-l2gaspricer
-	docker compose up -d cdk-validium-aggregator
-	docker compose up -d cdk-validium-json-rpc
+	docker compose up -d xgon-sequencer
+	docker compose up -d xgon-sequence-sender
+	docker compose up -d xgon-l2gaspricer
+	docker compose up -d xgon-aggregator
+	docker compose up -d xgon-json-rpc
 
 .PHONY: stop-node
 stop-node: ## Stops the node
-	docker compose stop cdk-validium-sequencer && docker compose rm -f cdk-validium-sequencer
-	docker compose stop cdk-validium-sequence-sender && docker compose rm -f cdk-validium-sequence-sender
-	docker compose stop cdk-validium-json-rpc && docker compose rm -f cdk-validium-json-rpc
-	docker compose stop cdk-validium-l2gaspricer && docker compose rm -f cdk-validium-l2gaspricer
-	docker compose stop cdk-validium-aggregator && docker compose rm -f cdk-validium-aggregator
-	docker compose stop cdk-validium-sync && docker compose rm -f cdk-validium-sync
-	docker compose stop cdk-validium-eth-tx-manager && docker compose rm -f cdk-validium-eth-tx-manager
+	docker compose stop xgon-sequencer && docker compose rm -f xgon-sequencer
+	docker compose stop xgon-sequence-sender && docker compose rm -f xgon-sequence-sender
+	docker compose stop xgon-json-rpc && docker compose rm -f xgon-json-rpc
+	docker compose stop xgon-l2gaspricer && docker compose rm -f xgon-l2gaspricer
+	docker compose stop xgon-aggregator && docker compose rm -f xgon-aggregator
+	docker compose stop xgon-sync && docker compose rm -f xgon-sync
+	docker compose stop xgon-eth-tx-manager && docker compose rm -f xgon-eth-tx-manager
 
 .PHONY: run-network
 run-network: ## Runs the l1 network
-	docker compose up -d cdk-validium-mock-l1-network
+	docker compose up -d xgon-mock-l1-network
 
 .PHONY: stop-network
 stop-network: ## Stops the l1 network
-	docker compose stop cdk-validium-mock-l1-network && docker compose rm -f cdk-validium-mock-l1-network
+	docker compose stop xgon-mock-l1-network && docker compose rm -f xgon-mock-l1-network
 
 .PHONY: run-approve-matic
 run-approve-matic: ## Runs approve in node container
-	docker compose up -d cdk-validium-approve
+	docker compose up -d xgon-approve
 
 .PHONY: stop-approve-matic
 stop-approve-matic: ## Stops approve in node container
-	docker compose stop cdk-validium-approve && docker compose rm -f cdk-validium-approve
+	docker compose stop xgon-approve && docker compose rm -f xgon-approve
 
 ### manual utility to stop dac nodes that were started by e2e, but not stopped by e2e ###
 .PHONY: stop-dac-nodes
@@ -95,7 +94,7 @@ stop-dac-nodes:
 .PHONY: stop-dac-dbs
 stop-dac-dbs:
 	for i in 0 1 2 3 4 ; do \
-  		(docker kill cdk-validium-data-node-db-$$i || true) && (docker rm cdk-validium-data-node-db-$$i || true); \
+  		(docker kill xgon-data-node-db-$$i || true) && (docker rm xgon-data-node-db-$$i || true); \
   	done
 
 .PHONY: stop-dacs

@@ -7,7 +7,6 @@ ZkEVMAddress = "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C"
 DataCommitteeAddress = "0x6Ae5b0863dBF3477335c0102DBF432aFf04ceb22"
 Timeout = "3m"
 RetryPeriod = "5s"
-BlockBatchSize = 32
 
 [Log]
 Environment = "development" # "production" or "development"
