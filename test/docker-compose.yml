@@ -5,7 +5,7 @@ networks:
 services:
   x1-sequencer:
     container_name: x1-sequencer
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 9092:9091 # needed if metrics enabled
       - 6060:6060
@@ -22,7 +22,7 @@ services:
 
   x1-json-rpc:
     container_name: x1-json-rpc
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 8123:8123
       - 8133:8133 # needed if WebSockets enabled
@@ -40,7 +40,7 @@ services:
 
   x1-aggregator:
     container_name: x1-aggregator
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 50081:50081
       - 9093:9091 # needed if metrics enabled
@@ -57,7 +57,7 @@ services:
 
   x1-sync:
     container_name: x1-sync
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 9095:9091 # needed if metrics enabled
     environment:
@@ -163,7 +163,7 @@ services:
 
   x1-explorer-json-rpc:
     container_name: x1-explorer-json-rpc
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 8124:8124
     environment:
@@ -223,7 +223,7 @@ services:
 
   x1-approve:
     container_name: x1-approve
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     environment:
       - ZKEVM_NODE_STATEDB_HOST=x1-state-db
     volumes:
@@ -280,7 +280,7 @@ services:
 
   x1-eth-tx-manager:
     container_name: x1-eth-tx-manager
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     ports:
       - 9094:9091 # needed if metrics enabled
     environment:
@@ -297,7 +297,7 @@ services:
 
   x1-sequence-sender:
     container_name: x1-sequence-sender
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     environment:
       - ZKEVM_NODE_STATEDB_HOST=x1-state-db
       - ZKEVM_NODE_POOL_DB_HOST=x1-pool-db
@@ -313,7 +313,7 @@ services:
 
   x1-l2gaspricer:
     container_name: x1-l2gaspricer
-    image: zjg555543/x1-node:v0.1.0_2023111_01 
+    image: zjg555543/x1-node:v0.1.0_2023111_03
     environment:
       - ZKEVM_NODE_POOL_DB_HOST=x1-pool-db
     volumes:
