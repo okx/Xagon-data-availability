@@ -145,6 +145,6 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/x1-node v0.2.6-RC3.0.20231023052616-8330009ec637
+replace github.com/0xPolygonHermez/zkevm-node => github.com/okx/x1-node v0.2.6-RC3.0.20231111032632-500782b44703
 
 replace github.com/0xPolygon/cdk-data-availability => ./
