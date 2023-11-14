@@ -551,8 +551,8 @@ github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OS
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
-github.com/okx/Xgon-node v0.2.6-RC3.0.20231023052616-8330009ec637 h1:/ZxAgoMycmuVJ0tN6FjBGU1w0fsP4pAkoW3g2Z8VnIs=
-github.com/okx/Xgon-node v0.2.6-RC3.0.20231023052616-8330009ec637/go.mod h1:n3w21Wec5I+ISPbcMhThQd/CPuzwpSjt7HEz1VwnoFo=
+github.com/okx/x1-node v0.2.6-RC3.0.20231111032632-500782b44703 h1:QuU91pKZ+MtWaKCUmqUdVARp/JHTUUT8h+mZNnHYHrw=
+github.com/okx/x1-node v0.2.6-RC3.0.20231111032632-500782b44703/go.mod h1:Rl9oH8vGAqtP27RxRyQm4HzuXnphQIR7hs16IoLX4Rw=
 github.com/olekukonko/tablewriter v0.0.5 h1:P2Ga83D34wi1o9J6Wh1mRuqd4mF/x/lgBS7N7AbDhec=
 github.com/olekukonko/tablewriter v0.0.5/go.mod h1:hPp6KlRPjbx+hW8ykQs1w3UBbZlj6HuIJcUGPhkA7kY=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
