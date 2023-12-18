@@ -10,7 +10,6 @@ import (
 	dataavailability "github.com/0xPolygon/cdk-data-availability"
 	"github.com/0xPolygon/cdk-data-availability/config"
 	"github.com/0xPolygon/cdk-data-availability/db"
-	"github.com/0xPolygon/cdk-data-availability/dummyinterfaces"
 	"github.com/0xPolygon/cdk-data-availability/services/datacom"
 	"github.com/0xPolygon/cdk-data-availability/services/sync"
 	"github.com/0xPolygon/cdk-data-availability/synchronizer"
@@ -111,9 +110,7 @@ func start(cliCtx *cli.Context) error {
 	server := jsonrpc.NewServer(
 		c.RPC,
 		0,
-		&dummyinterfaces.DummyPool{},
-		&dummyinterfaces.DummyState{},
-		&dummyinterfaces.DummyStorage{},
+		nil, nil, nil,
 		[]jsonrpc.Service{
 			{
 				Name:    sync.APISYNC,
