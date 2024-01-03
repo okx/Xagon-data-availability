@@ -8,6 +8,8 @@ import (
 	"github.com/0xPolygon/cdk-data-availability/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
 	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
+	"github.com/0xPolygonHermez/zkevm-node/log"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -20,6 +22,8 @@ type DataComEndpoints struct {
 	txMan            jsonrpc.DBTxManager
 	privateKey       *ecdsa.PrivateKey
 	sequencerTracker *synchronizer.SequencerTracker
+
+	signSequenceAddress common.Address
 }
 
 // NewDataComEndpoints returns DataComEndpoints
@@ -39,12 +43,14 @@ func NewDataComEndpoints(
 func (d *DataComEndpoints) SignSequence(signedSequence sequence.SignedSequence) (interface{}, types.Error) {
 	// Verify that the request comes from the sequencer
 	sender, err := signedSequence.Signer()
-	if err != nil {
+	if err != nil || sender.Cmp(common.Address{}) == 0 {
 		return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to verify sender")
 	}
-	if sender != d.sequencerTracker.GetAddr() {
+	if sender != d.sequencerTracker.GetAddr() && sender != d.signSequenceAddress {
 		return "0x0", types.NewRPCError(types.DefaultErrorCode, "unauthorized")
 	}
+	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, signSequenceAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.signSequenceAddress.String())
+
 	// Store off-chain data by hash (hash(L2Data): L2Data)
 	_, err = d.txMan.NewDbTxScope(d.db, func(ctx context.Context, dbTx pgx.Tx) (interface{}, types.Error) {
 		err := d.db.StoreOffChainData(ctx, signedSequence.Sequence.OffChainData(), dbTx)

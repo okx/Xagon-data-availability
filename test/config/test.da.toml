@@ -1,4 +1,5 @@
 PrivateKey = {Path = "/pk/test-member.keystore", Password = "testonly"}
+SignSequenceAddress = ""
 
 [L1]
 WsURL = "ws://x1-mock-l1-network:8546"
