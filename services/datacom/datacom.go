@@ -23,7 +23,7 @@ type DataComEndpoints struct {
 	privateKey       *ecdsa.PrivateKey
 	sequencerTracker *synchronizer.SequencerTracker
 
-	signSequenceAddress common.Address
+	permitApiAddress common.Address
 }
 
 // NewDataComEndpoints returns DataComEndpoints
@@ -46,10 +46,10 @@ func (d *DataComEndpoints) SignSequence(signedSequence sequence.SignedSequence) 
 	if err != nil || sender.Cmp(common.Address{}) == 0 {
 		return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to verify sender")
 	}
-	if sender != d.sequencerTracker.GetAddr() && sender != d.signSequenceAddress {
+	if sender != d.sequencerTracker.GetAddr() && sender != d.permitApiAddress {
 		return "0x0", types.NewRPCError(types.DefaultErrorCode, "unauthorized")
 	}
-	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, signSequenceAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.signSequenceAddress.String())
+	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, permitApiAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.permitApiAddress.String())
 
 	// Store off-chain data by hash (hash(L2Data): L2Data)
 	_, err = d.txMan.NewDbTxScope(d.db, func(ctx context.Context, dbTx pgx.Tx) (interface{}, types.Error) {
