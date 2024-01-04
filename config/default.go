@@ -10,7 +10,7 @@ import (
 // DefaultValues is the default configuration
 const DefaultValues = `
 PrivateKey = {Path = "/pk/test-member.keystore", Password = "testonly"}
-SignSequenceAddress = "0x0000000000000000000000000000000000000000"
+PermitApiAddress = "0x0000000000000000000000000000000000000000"
 
 [L1]
 WsURL = "ws://127.0.0.1:8546"

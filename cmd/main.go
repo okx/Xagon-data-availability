@@ -122,7 +122,7 @@ func start(cliCtx *cli.Context) error {
 					storage,
 					pk,
 					sequencerTracker,
-					c.SignSequenceAddress,
+					c.PermitApiAddress,
 				),
 			},
 		},

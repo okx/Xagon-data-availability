@@ -42,7 +42,7 @@ func Test_Defaults(t *testing.T) {
 			expectedValue: uint(64),
 		},
 		{
-			path:          "SignSequenceAddress",
+			path:          "PermitApiAddress",
 			expectedValue: common.Address{},
 		},
 		// TODO: more default checks

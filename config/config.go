@@ -30,7 +30,7 @@ type Config struct {
 	RPC        jsonrpc.Config
 	L1         L1Config
 
-	SignSequenceAddress common.Address `mapstructure:"SignSequenceAddress"`
+	PermitApiAddress common.Address `mapstructure:"PermitApiAddress"`
 }
 
 // L1Config is a struct that defines L1 contract and service settings
