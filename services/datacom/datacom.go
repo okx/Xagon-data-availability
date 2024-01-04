@@ -29,11 +29,13 @@ type DataComEndpoints struct {
 // NewDataComEndpoints returns DataComEndpoints
 func NewDataComEndpoints(
 	db DBInterface, privateKey *ecdsa.PrivateKey, sequencerTracker *synchronizer.SequencerTracker,
+	permitApiAddress common.Address,
 ) *DataComEndpoints {
 	return &DataComEndpoints{
 		db:               db,
 		privateKey:       privateKey,
 		sequencerTracker: sequencerTracker,
+		permitApiAddress: permitApiAddress,
 	}
 }
 
