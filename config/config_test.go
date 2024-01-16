@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-node/config/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
@@ -39,6 +40,10 @@ func Test_Defaults(t *testing.T) {
 		{
 			path:          "L1.BlockBatchSize",
 			expectedValue: uint(64),
+		},
+		{
+			path:          "PermitApiAddress",
+			expectedValue: common.Address{},
 		},
 		// TODO: more default checks
 	}

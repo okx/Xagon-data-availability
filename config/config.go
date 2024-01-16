@@ -11,6 +11,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
 	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
@@ -28,6 +29,8 @@ type Config struct {
 	Log        log.Config
 	RPC        jsonrpc.Config
 	L1         L1Config
+
+	PermitApiAddress common.Address `mapstructure:"PermitApiAddress"`
 }
 
 // L1Config is a struct that defines L1 contract and service settings
