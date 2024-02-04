@@ -6,11 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/0xPolygon/cdk-data-availability/batch"
 	"github.com/0xPolygon/cdk-data-availability/client"
 	"github.com/0xPolygon/cdk-data-availability/config"
-	"github.com/0xPolygon/cdk-data-availability/sequence"
-	cfgTypes "github.com/0xPolygonHermez/zkevm-node/config/types"
+	cfgTypes "github.com/0xPolygon/cdk-data-availability/config/types"
+	"github.com/0xPolygon/cdk-data-availability/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
@@ -40,26 +39,12 @@ func TestSignSequence(t *testing.T) {
 	tc, pk := initTest(t)
 	type testSequences struct {
 		name        string
-		sequence    sequence.SignedSequence
+		sequence    types.SignedSequence
 		expectedErr error
 	}
-	expectedSequence := sequence.Sequence{
-		Batches: []batch.Batch{
-			{
-				Number:         3,
-				GlobalExitRoot: common.HexToHash("0x678343456734678"),
-				Timestamp:      3457834,
-				Coinbase:       common.HexToAddress("0x345678934t567889137"),
-				L2Data:         common.Hex2Bytes("274567245673256275642756243560234572347657236520"),
-			},
-			{
-				Number:         4,
-				GlobalExitRoot: common.HexToHash("0x34678345678345789534678912345678"),
-				Timestamp:      78907890,
-				Coinbase:       common.HexToAddress("0x3457234672345789234567"),
-				L2Data:         common.Hex2Bytes("7863456782345678923456789354"),
-			},
-		},
+	expectedSequence := types.Sequence{
+		common.Hex2Bytes("274567245673256275642756243560234572347657236520"),
+		common.Hex2Bytes("7863456782345678923456789354"),
 	}
 
 	unexpectedSenderPrivKey, err := crypto.GenerateKey()
@@ -69,15 +54,15 @@ func TestSignSequence(t *testing.T) {
 	tSequences := []testSequences{
 		{
 			name: "invalid_signature",
-			sequence: sequence.SignedSequence{
-				Sequence:  sequence.Sequence{},
+			sequence: types.SignedSequence{
+				Sequence:  types.Sequence{},
 				Signature: common.Hex2Bytes("f00"),
 			},
 			expectedErr: errors.New("-32000 failed to verify sender"),
 		},
 		{
 			name: "signature_not_from_sender",
-			sequence: sequence.SignedSequence{
+			sequence: types.SignedSequence{
 				Sequence:  expectedSequence,
 				Signature: unexpectedSenderSignedSequence.Signature,
 			},
@@ -85,12 +70,12 @@ func TestSignSequence(t *testing.T) {
 		},
 		{
 			name:        "empty_batch",
-			sequence:    sequence.SignedSequence{},
+			sequence:    types.SignedSequence{},
 			expectedErr: nil,
 		},
 		{
 			name: "success",
-			sequence: sequence.SignedSequence{
+			sequence: types.SignedSequence{
 				Sequence:  expectedSequence,
 				Signature: nil,
 			},
@@ -116,12 +101,12 @@ type testClient struct {
 
 func newTestClient(url string, addr common.Address) *testClient {
 	return &testClient{
-		client:        *client.New(url),
+		client:        client.New(url),
 		dacMemberAddr: addr,
 	}
 }
 
-func (tc *testClient) signSequence(t *testing.T, expected *sequence.SignedSequence, expectedErr error) {
+func (tc *testClient) signSequence(t *testing.T, expected *types.SignedSequence, expectedErr error) {
 	if signature, err := tc.client.SignSequence(*expected); err != nil {
 		assert.Equal(t, expectedErr.Error(), err.Error())
 	} else {

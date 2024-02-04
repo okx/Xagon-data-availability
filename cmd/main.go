@@ -8,15 +8,19 @@ import (
 	"time"
 
 	dataavailability "github.com/0xPolygon/cdk-data-availability"
+	"github.com/0xPolygon/cdk-data-availability/client"
 	"github.com/0xPolygon/cdk-data-availability/config"
 	"github.com/0xPolygon/cdk-data-availability/db"
+	"github.com/0xPolygon/cdk-data-availability/etherman"
+	"github.com/0xPolygon/cdk-data-availability/log"
+	"github.com/0xPolygon/cdk-data-availability/rpc"
+	"github.com/0xPolygon/cdk-data-availability/sequencer"
 	"github.com/0xPolygon/cdk-data-availability/services/datacom"
 	"github.com/0xPolygon/cdk-data-availability/services/sync"
 	"github.com/0xPolygon/cdk-data-availability/synchronizer"
-	dbConf "github.com/0xPolygonHermez/zkevm-node/db"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
-	"github.com/0xPolygonHermez/zkevm-node/log"
+	"github.com/0xPolygon/cdk-data-availability/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	_ "github.com/lib/pq"
 	"github.com/urfave/cli/v2"
 )
 
@@ -61,13 +65,15 @@ func start(cliCtx *cli.Context) error {
 	setupLog(c.Log)
 
 	// Prepare DB
-	pg, err := dbConf.NewSQLDB(c.DB)
+	pg, err := db.InitContext(cliCtx.Context, c.DB)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := db.RunMigrationsUp(pg); err != nil {
+
+	if err = db.RunMigrationsUp(pg); err != nil {
 		log.Fatal(err)
 	}
+
 	storage := db.New(pg)
 
 	// Load private key
@@ -75,16 +81,29 @@ func start(cliCtx *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// derive address
-	selfAddr := crypto.PubkeyToAddress(pk.PublicKey)
 
-	var cancelFuncs []context.CancelFunc
-
-	sequencerTracker, err := synchronizer.NewSequencerTracker(c.L1)
+	// Load EtherMan
+	etm, err := etherman.New(cliCtx.Context, c.L1)
 	if err != nil {
 		log.Fatal(err)
 	}
-	go sequencerTracker.Start()
+
+	// derive address
+	selfAddr := crypto.PubkeyToAddress(pk.PublicKey)
+
+	// ensure synchro/reorg start block is set
+	err = synchronizer.InitStartBlock(storage, types.NewEthClientFactory(), c.L1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var cancelFuncs []context.CancelFunc
+
+	sequencerTracker, err := sequencer.NewTracker(c.L1, etm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go sequencerTracker.Start(cliCtx.Context)
 	cancelFuncs = append(cancelFuncs, sequencerTracker.Stop)
 
 	detector, err := synchronizer.NewReorgDetector(c.L1.RpcURL, 1*time.Second)
@@ -99,7 +118,8 @@ func start(cliCtx *cli.Context) error {
 
 	cancelFuncs = append(cancelFuncs, detector.Stop)
 
-	batchSynchronizer, err := synchronizer.NewBatchSynchronizer(c.L1, selfAddr, storage, detector.Subscribe())
+	batchSynchronizer, err := synchronizer.NewBatchSynchronizer(c.L1, selfAddr,
+		storage, detector.Subscribe(), etm, sequencerTracker, client.NewFactory())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,11 +127,9 @@ func start(cliCtx *cli.Context) error {
 	cancelFuncs = append(cancelFuncs, batchSynchronizer.Stop)
 
 	// Register services
-	server := jsonrpc.NewServer(
+	server := rpc.NewServer(
 		c.RPC,
-		0,
-		nil, nil, nil,
-		[]jsonrpc.Service{
+		[]rpc.Service{
 			{
 				Name:    sync.APISYNC,
 				Service: sync.NewSyncEndpoints(storage),

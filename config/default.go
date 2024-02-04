@@ -15,8 +15,8 @@ PermitApiAddress = "0x0000000000000000000000000000000000000000"
 [L1]
 WsURL = "ws://127.0.0.1:8546"
 RpcURL = "http://127.0.0.1:8545"
-ZkEVMAddress = "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C"
-DataCommitteeAddress = "0x0"
+PolygonValidiumAddress = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"
+DataCommitteeAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
 Timeout = "1m"
 RetryPeriod = "5s"
 BlockBatchSize = "64"
@@ -41,10 +41,6 @@ Port = 8444
 ReadTimeout = "60s"
 WriteTimeout = "60s"
 MaxRequestsPerIPAndSecond = 500
-SequencerNodeURI = ""
-EnableL2SuggestedGasPricePolling = false
-	[RPC.WebSockets]
-		Enabled = false
 `
 
 // Default parses the default configuration values.

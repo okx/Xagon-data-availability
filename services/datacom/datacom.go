@@ -3,14 +3,14 @@ package datacom
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 
-	"github.com/0xPolygon/cdk-data-availability/sequence"
-	"github.com/0xPolygon/cdk-data-availability/synchronizer"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
-	"github.com/0xPolygonHermez/zkevm-node/log"
+	"github.com/0xPolygon/cdk-data-availability/db"
+	"github.com/0xPolygon/cdk-data-availability/log"
+	"github.com/0xPolygon/cdk-data-availability/rpc"
+	"github.com/0xPolygon/cdk-data-availability/sequencer"
+	"github.com/0xPolygon/cdk-data-availability/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
 )
 
 // APIDATACOM is the namespace of the datacom service
@@ -18,17 +18,17 @@ const APIDATACOM = "datacom"
 
 // DataComEndpoints contains implementations for the "datacom" RPC endpoints
 type DataComEndpoints struct {
-	db               DBInterface
-	txMan            jsonrpc.DBTxManager
+	db               db.DB
+	txMan            rpc.DBTxManager
 	privateKey       *ecdsa.PrivateKey
-	sequencerTracker *synchronizer.SequencerTracker
+	sequencerTracker *sequencer.Tracker
 
 	permitApiAddress common.Address
 }
 
 // NewDataComEndpoints returns DataComEndpoints
 func NewDataComEndpoints(
-	db DBInterface, privateKey *ecdsa.PrivateKey, sequencerTracker *synchronizer.SequencerTracker,
+	db db.DB, privateKey *ecdsa.PrivateKey, sequencerTracker *sequencer.Tracker,
 	permitApiAddress common.Address,
 ) *DataComEndpoints {
 	return &DataComEndpoints{
@@ -42,33 +42,34 @@ func NewDataComEndpoints(
 // SignSequence generates the accumulated input hash aka accInputHash of the sequence and sign it.
 // After storing the data that will be sent hashed to the contract, it returns the signature.
 // This endpoint is only accessible to the sequencer
-func (d *DataComEndpoints) SignSequence(signedSequence sequence.SignedSequence) (interface{}, types.Error) {
+func (d *DataComEndpoints) SignSequence(signedSequence types.SignedSequence) (interface{}, rpc.Error) {
 	// Verify that the request comes from the sequencer
 	sender, err := signedSequence.Signer()
-	if err != nil || sender.Cmp(common.Address{}) == 0 {
-		return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to verify sender")
+
+	if err != nil || d.isEmptyAddress(sender) {
+		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "failed to verify sender")
 	}
 	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, permitApiAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.permitApiAddress.String())
 	if sender != d.sequencerTracker.GetAddr() && sender != d.permitApiAddress {
-		return "0x0", types.NewRPCError(types.DefaultErrorCode, "unauthorized")
+		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "unauthorized")
 	}
 
 	// Store off-chain data by hash (hash(L2Data): L2Data)
-	_, err = d.txMan.NewDbTxScope(d.db, func(ctx context.Context, dbTx pgx.Tx) (interface{}, types.Error) {
+	_, err = d.txMan.NewDbTxScope(d.db, func(ctx context.Context, dbTx db.Tx) (interface{}, rpc.Error) {
 		err := d.db.StoreOffChainData(ctx, signedSequence.Sequence.OffChainData(), dbTx)
 		if err != nil {
-			return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to store offchain data")
+			return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, fmt.Errorf("failed to store offchain data. Error: %w", err).Error())
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to store offchain data")
+		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, err.Error())
 	}
 	// Sign
 	signedSequenceByMe, err := signedSequence.Sequence.Sign(d.privateKey)
 	if err != nil {
-		return "0x0", types.NewRPCError(types.DefaultErrorCode, "failed to sign")
+		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, fmt.Errorf("failed to sign. Error: %w", err).Error())
 	}
 	// Return signature
 	return signedSequenceByMe.Signature, nil

@@ -1,13 +1,16 @@
 package config
 
 import (
+	"flag"
+	"github.com/ethereum/go-ethereum/common"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/0xPolygon/cdk-data-availability/config/types"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
@@ -26,8 +29,8 @@ func Test_Defaults(t *testing.T) {
 			expectedValue: "http://127.0.0.1:8545",
 		},
 		{
-			path:          "L1.ZkEVMAddress",
-			expectedValue: "0x0D9088C72Cd4F08e9dDe474D8F5394147f64b22C",
+			path:          "L1.PolygonValidiumAddress",
+			expectedValue: "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
 		},
 		{
 			path:          "L1.Timeout",
@@ -59,6 +62,32 @@ func Test_Defaults(t *testing.T) {
 			require.Equal(t, tc.expectedValue, actual)
 		})
 	}
+}
+
+func Test_ConfigFileNotFound(t *testing.T) {
+	flags := flag.FlagSet{}
+	flags.String("cfg", "/fictitious-file/foo.cfg", "")
+
+	ctx := cli.NewContext(cli.NewApp(), &flags, nil)
+	_, err := Load(ctx)
+	require.Error(t, err)
+}
+
+func Test_ConfigFileOverride(t *testing.T) {
+	tempDir := t.TempDir()
+	overrides := filepath.Join(tempDir, "overrides.toml")
+	f, err := os.Create(overrides)
+	require.NoError(t, err)
+	_, err = f.WriteString("[L1]\n")
+	require.NoError(t, err)
+	_, err = f.WriteString("PolygonValidiumAddress = \"0xDEADBEEF\"")
+	require.NoError(t, err)
+	flags := flag.FlagSet{}
+	flags.String("cfg", overrides, "")
+	ctx := cli.NewContext(cli.NewApp(), &flags, nil)
+	cfg, err := Load(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "0xDEADBEEF", cfg.L1.PolygonValidiumAddress)
 }
 
 func getValueFromStruct(path string, object interface{}) interface{} {

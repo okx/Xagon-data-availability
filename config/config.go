@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
-	"github.com/0xPolygonHermez/zkevm-node/db"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc"
-	"github.com/0xPolygonHermez/zkevm-node/log"
+	"github.com/0xPolygon/cdk-data-availability/config/types"
+	"github.com/0xPolygon/cdk-data-availability/db"
+	"github.com/0xPolygon/cdk-data-availability/log"
+	"github.com/0xPolygon/cdk-data-availability/rpc"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/mitchellh/mapstructure"
@@ -27,7 +27,7 @@ type Config struct {
 	PrivateKey types.KeystoreFileConfig
 	DB         db.Config
 	Log        log.Config
-	RPC        jsonrpc.Config
+	RPC        rpc.Config
 	L1         L1Config
 
 	PermitApiAddress common.Address `mapstructure:"PermitApiAddress"`
@@ -35,13 +35,13 @@ type Config struct {
 
 // L1Config is a struct that defines L1 contract and service settings
 type L1Config struct {
-	WsURL                string         `mapstructure:"WsURL"`
-	RpcURL               string         `mapstructure:"RpcURL"`
-	ZkEVMAddress         string         `mapstructure:"ZkEVMAddress"`
-	DataCommitteeAddress string         `mapstructure:"DataCommitteeAddress"`
-	Timeout              types.Duration `mapstructure:"Timeout"`
-	RetryPeriod          types.Duration `mapstructure:"RetryPeriod"`
-	BlockBatchSize       uint           `mapstructure:"BlockBatchSize"`
+	WsURL                  string         `mapstructure:"WsURL"`
+	RpcURL                 string         `mapstructure:"RpcURL"`
+	PolygonValidiumAddress string         `mapstructure:"PolygonValidiumAddress"`
+	DataCommitteeAddress   string         `mapstructure:"DataCommitteeAddress"`
+	Timeout                types.Duration `mapstructure:"Timeout"`
+	RetryPeriod            types.Duration `mapstructure:"RetryPeriod"`
+	BlockBatchSize         uint           `mapstructure:"BlockBatchSize"`
 }
 
 // Load loads the configuration baseed on the cli context
@@ -50,6 +50,12 @@ func Load(ctx *cli.Context) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	viper.AutomaticEnv()
+	replacer := strings.NewReplacer(".", "_")
+	viper.SetEnvKeyReplacer(replacer)
+	viper.SetEnvPrefix("DATA_NODE")
+
 	configFilePath := ctx.String(FlagCfg)
 	if configFilePath != "" {
 		dirName, fileName := filepath.Split(configFilePath)
@@ -60,18 +66,8 @@ func Load(ctx *cli.Context) (*Config, error) {
 		viper.AddConfigPath(dirName)
 		viper.SetConfigName(fileNameWithoutExtension)
 		viper.SetConfigType(fileExtension)
-	}
-	viper.AutomaticEnv()
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	viper.SetEnvPrefix("DATA_NODE")
-	err = viper.ReadInConfig()
-	if err != nil {
-		_, ok := err.(viper.ConfigFileNotFoundError)
-		if ok {
-			log.Infof("config file not found")
-		} else {
-			log.Infof("error reading config file: ", err)
+		err = viper.ReadInConfig()
+		if err != nil {
 			return nil, err
 		}
 	}

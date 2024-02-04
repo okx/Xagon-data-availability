@@ -2,43 +2,64 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"errors"
 
-	"github.com/0xPolygon/cdk-data-availability/offchaindata"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
-	"github.com/0xPolygonHermez/zkevm-node/state"
+	"github.com/0xPolygon/cdk-data-availability/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jmoiron/sqlx"
 )
 
+var (
+	// ErrStateNotSynchronized indicates the state database may be empty
+	ErrStateNotSynchronized = errors.New("state not synchronized")
+)
+
+// DB defines functions that a DB instance should implement
+type DB interface {
+	BeginStateTransaction(ctx context.Context) (Tx, error)
+	Exists(ctx context.Context, key common.Hash) bool
+	GetLastProcessedBlock(ctx context.Context, task string) (uint64, error)
+	GetOffChainData(ctx context.Context, key common.Hash, dbTx sqlx.QueryerContext) (types.ArgBytes, error)
+	StoreLastProcessedBlock(ctx context.Context, task string, block uint64, dbTx sqlx.ExecerContext) error
+	StoreOffChainData(ctx context.Context, od []types.OffChainData, dbTx sqlx.ExecerContext) error
+}
+
+// Tx is the interface that defines functions a db tx has to implement
+type Tx interface {
+	sqlx.ExecerContext
+	sqlx.QueryerContext
+	driver.Tx
+}
+
 // DB is the database layer of the data node
-type DB struct {
-	pg *pgxpool.Pool
+type pgDB struct {
+	pg *sqlx.DB
 }
 
 // New instantiates a DB
-func New(pg *pgxpool.Pool) *DB {
-	return &DB{
+func New(pg *sqlx.DB) DB {
+	return &pgDB{
 		pg: pg,
 	}
 }
 
 // BeginStateTransaction begins a DB transaction. The caller is responsible for committing or rolling back the transaction
-func (db *DB) BeginStateTransaction(ctx context.Context) (pgx.Tx, error) {
-	return db.pg.Begin(ctx)
+func (db *pgDB) BeginStateTransaction(ctx context.Context) (Tx, error) {
+	return db.pg.BeginTxx(ctx, nil)
 }
 
 // StoreOffChainData stores and array of key values in the Db
-func (db *DB) StoreOffChainData(ctx context.Context, od []offchaindata.OffChainData, dbTx pgx.Tx) error {
+func (db *pgDB) StoreOffChainData(ctx context.Context, od []types.OffChainData, dbTx sqlx.ExecerContext) error {
 	const storeOffChainDataSQL = `
 		INSERT INTO data_node.offchain_data (key, value)
 		VALUES ($1, $2)
 		ON CONFLICT (key) DO NOTHING;
 	`
+
 	for _, d := range od {
-		if _, err := dbTx.Exec(
+		if _, err := dbTx.ExecContext(
 			ctx, storeOffChainDataSQL,
 			d.Key.Hex(),
 			common.Bytes2Hex(d.Value),
@@ -51,75 +72,69 @@ func (db *DB) StoreOffChainData(ctx context.Context, od []offchaindata.OffChainD
 }
 
 // GetOffChainData returns the value identified by the key
-func (db *DB) GetOffChainData(ctx context.Context, key common.Hash, dbTx pgx.Tx) (types.ArgBytes, error) {
+func (db *pgDB) GetOffChainData(ctx context.Context, key common.Hash, dbTx sqlx.QueryerContext) (types.ArgBytes, error) {
 	const getOffchainDataSQL = `
 		SELECT value
 		FROM data_node.offchain_data 
 		WHERE key = $1 LIMIT 1;
 	`
+
 	var (
 		hexValue string
 	)
 
-	if err := dbTx.QueryRow(ctx, getOffchainDataSQL, key.Hex()).Scan(&hexValue); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, state.ErrStateNotSynchronized
+	if err := dbTx.QueryRowxContext(ctx, getOffchainDataSQL, key.Hex()).Scan(&hexValue); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrStateNotSynchronized
 		}
 		return nil, err
 	}
+
 	return common.FromHex(hexValue), nil
 }
 
 // Exists checks if a key exists in offchain data table
-func (db *DB) Exists(ctx context.Context, key common.Hash) bool {
-	var keyExists = "SELECT COUNT(*) FROM data_node.offchain_data WHERE key = $1"
+func (db *pgDB) Exists(ctx context.Context, key common.Hash) bool {
+	const keyExists = "SELECT COUNT(*) FROM data_node.offchain_data WHERE key = $1;"
+
 	var (
 		count uint
 	)
 
-	if err := db.pg.QueryRow(ctx, keyExists, key.Hex()).Scan(&count); err != nil {
+	if err := db.pg.QueryRowContext(ctx, keyExists, key.Hex()).Scan(&count); err != nil {
 		return false
 	}
+
 	return count > 0
 }
 
-// GetLastProcessedBlock returns the latest block successfully processed by the synchronizer
-func (db *DB) GetLastProcessedBlock(ctx context.Context) (uint64, error) {
-	const getLastProcessedBlockSQL = "SELECT max(block) FROM data_node.sync_info;"
+// StoreLastProcessedBlock stores a record of a block processed by the synchronizer for named task
+func (db *pgDB) StoreLastProcessedBlock(ctx context.Context, task string, block uint64, dbTx sqlx.ExecerContext) error {
+	const storeLastProcessedBlockSQL = `
+		INSERT INTO data_node.sync_tasks (task, block) 
+		VALUES ($1, $2)
+		ON CONFLICT (task) DO UPDATE 
+		SET block = EXCLUDED.block, processed = NOW();
+	`
+
+	if _, err := dbTx.ExecContext(ctx, storeLastProcessedBlockSQL, task, block); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetLastProcessedBlock returns the latest block successfully processed by the synchronizer for named task
+func (db *pgDB) GetLastProcessedBlock(ctx context.Context, task string) (uint64, error) {
+	const getLastProcessedBlockSQL = "SELECT block FROM data_node.sync_tasks WHERE task = $1;"
+
 	var (
 		lastBlock uint64
 	)
 
-	if err := db.pg.QueryRow(ctx, getLastProcessedBlockSQL).Scan(&lastBlock); err != nil {
+	if err := db.pg.QueryRowContext(ctx, getLastProcessedBlockSQL, task).Scan(&lastBlock); err != nil {
 		return 0, err
 	}
+
 	return lastBlock, nil
-}
-
-// ResetLastProcessedBlock removes all sync_info for blocks greater than `block`
-func (db *DB) ResetLastProcessedBlock(ctx context.Context, block uint64) (uint64, error) {
-	const resetLastProcessedBlock = "DELETE FROM data_node.sync_info WHERE block > $1"
-	var (
-		ct  pgconn.CommandTag
-		err error
-	)
-	if ct, err = db.pg.Exec(ctx, resetLastProcessedBlock, block); err != nil {
-		return 0, err
-	}
-	return uint64(ct.RowsAffected()), nil
-}
-
-// StoreLastProcessedBlock stores a record of a block processed by the synchronizer
-func (db *DB) StoreLastProcessedBlock(ctx context.Context, block uint64, dbTx pgx.Tx) error {
-	const storeLastProcessedBlockSQL = `
-		INSERT INTO data_node.sync_info (block) 
-		VALUES ($1) 
-		ON CONFLICT (block) DO UPDATE 
-		SET processed = NOW();
-	`
-
-	if _, err := dbTx.Exec(ctx, storeLastProcessedBlockSQL, block); err != nil {
-		return err
-	}
-	return nil
 }

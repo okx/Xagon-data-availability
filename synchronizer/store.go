@@ -4,20 +4,21 @@ import (
 	"context"
 	"time"
 
-	"github.com/0xPolygon/cdk-data-availability/db"
-	"github.com/0xPolygon/cdk-data-availability/offchaindata"
-	"github.com/0xPolygonHermez/zkevm-node/log"
+	dbTypes "github.com/0xPolygon/cdk-data-availability/db"
+	"github.com/0xPolygon/cdk-data-availability/log"
+	"github.com/0xPolygon/cdk-data-availability/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
 )
 
 const dbTimeout = 2 * time.Second
 
-func getStartBlock(db *db.DB) (uint64, error) {
+const l1SyncTask = "L1"
+
+func getStartBlock(db dbTypes.DB) (uint64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	start, err := db.GetLastProcessedBlock(ctx)
+	start, err := db.GetLastProcessedBlock(ctx, l1SyncTask)
 	if err != nil {
 		log.Errorf("error retrieving last processed block, starting from 0: %v", err)
 	}
@@ -27,68 +28,64 @@ func getStartBlock(db *db.DB) (uint64, error) {
 	return start, err
 }
 
-func setStartBlock(db *db.DB, block uint64) error {
+func setStartBlock(db dbTypes.DB, block uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
+
 	var (
-		dbTx pgx.Tx
+		dbTx dbTypes.Tx
 		err  error
 	)
+
 	if dbTx, err = db.BeginStateTransaction(ctx); err != nil {
 		return err
 	}
-	err = db.StoreLastProcessedBlock(ctx, block, dbTx)
-	if err != nil {
+
+	if err = db.StoreLastProcessedBlock(ctx, l1SyncTask, block, dbTx); err != nil {
 		return err
 	}
-	if err = dbTx.Commit(ctx); err != nil {
+
+	if err = dbTx.Commit(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func rewindStartBlock(db *db.DB, lca uint64) error {
+func exists(db dbTypes.DB, key common.Hash) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	rewind, err := db.ResetLastProcessedBlock(ctx, lca)
-	if err != nil {
-		return err
-	}
-	if rewind > 0 {
-		log.Infof("rewound %d blocks", rewind)
-	}
-	return nil
-}
-
-func exists(db *db.DB, key common.Hash) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
 	return db.Exists(ctx, key)
 }
 
-func store(db *db.DB, data []offchaindata.OffChainData) error {
+func store(db dbTypes.DB, data []types.OffChainData) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
+
 	var (
-		dbTx pgx.Tx
+		dbTx dbTypes.Tx
 		err  error
 	)
+
 	if dbTx, err = db.BeginStateTransaction(ctx); err != nil {
 		return err
 	}
+
 	if err = db.StoreOffChainData(ctx, data, dbTx); err != nil {
-		rollback(ctx, err, dbTx)
+		rollback(err, dbTx)
 		return err
 	}
-	if err = dbTx.Commit(ctx); err != nil {
+
+	if err = dbTx.Commit(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func rollback(ctx context.Context, err error, dbTx pgx.Tx) {
-	if txErr := dbTx.Rollback(ctx); txErr != nil {
+func rollback(err error, dbTx dbTypes.Tx) {
+	if txErr := dbTx.Rollback(); txErr != nil {
 		log.Errorf("failed to roll back transaction after error %v : %v", err, txErr)
 	}
 }
