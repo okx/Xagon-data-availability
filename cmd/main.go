@@ -99,6 +99,7 @@ func start(cliCtx *cli.Context) error {
 
 	var cancelFuncs []context.CancelFunc
 
+	log.Infof("cfg PolygonValidiumAddress:%v, DataCommitteeAddress:%v", c.L1.PolygonValidiumAddress, c.L1.DataCommitteeAddress)
 	sequencerTracker, err := sequencer.NewTracker(c.L1, etm)
 	if err != nil {
 		log.Fatal(err)

@@ -34,11 +34,13 @@ func InitStartBlock(db db.DB, ethClientFactory types.EthClientFactory, l1 config
 
 	ethClient, err := ethClientFactory.CreateEthClient(ctx, l1.RpcURL)
 	if err != nil {
+		log.Errorf("failed to create eth client: %v", err)
 		return err
 	}
 
 	startBlock, err := findContractDeploymentBlock(ctx, ethClient, common.HexToAddress(l1.PolygonValidiumAddress))
 	if err != nil {
+		log.Errorf("failed to find contract deployment block: %v", err)
 		return err
 	}
 

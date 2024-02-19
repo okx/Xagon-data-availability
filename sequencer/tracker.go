@@ -26,7 +26,7 @@ type Tracker struct {
 
 // NewTracker creates a new Tracker
 func NewTracker(cfg config.L1Config, ethClient etherman.Etherman) (*Tracker, error) {
-	log.Info("starting sequencer address tracker")
+	log.Infof("starting sequencer address tracker")
 	addr, err := ethClient.TrustedSequencer()
 	if err != nil {
 		return nil, err
