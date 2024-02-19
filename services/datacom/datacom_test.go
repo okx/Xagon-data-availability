@@ -89,7 +89,7 @@ func TestDataCom_SignSequence(t *testing.T) {
 			signer = cfg.signer
 		}
 
-		dce := NewDataComEndpoints(dbMock, signer, sequencer)
+		dce := NewDataComEndpoints(dbMock, signer, sequencer, common.Address{})
 
 		sig, err := dce.SignSequence(*signedSequence)
 		if cfg.expectedError != "" {

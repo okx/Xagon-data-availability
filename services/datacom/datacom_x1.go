@@ -8,5 +8,5 @@ import (
 
 func (d *DataComEndpoints) isEmptyAddress(a common.Address) bool {
 	emptyAddress := common.Address{}
-	return bytes.Compare(a[:], emptyAddress[:]) == 0
+	return bytes.Equal(a[:], emptyAddress[:])
 }

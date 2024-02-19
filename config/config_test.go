@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"github.com/ethereum/go-ethereum/common"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/0xPolygon/cdk-data-availability/config/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
