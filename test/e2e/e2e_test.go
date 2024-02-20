@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
+	"github.com/0xPolygon/cdk-data-availability/log"
 	"testing"
+	"time"
 
 	"github.com/0xPolygon/cdk-data-availability/client"
 	"github.com/0xPolygon/cdk-data-availability/config"
@@ -107,6 +109,8 @@ func newTestClient(url string, addr common.Address) *testClient {
 }
 
 func (tc *testClient) signSequence(t *testing.T, expected *types.SignedSequence, expectedErr error) {
+	log.Infof("zzzzz--Signing sequence: %v", expected.Sequence.OffChainData())
+	time.Sleep(1000 * time.Second)
 	if signature, err := tc.client.SignSequence(*expected); err != nil {
 		assert.Equal(t, expectedErr.Error(), err.Error())
 	} else {
