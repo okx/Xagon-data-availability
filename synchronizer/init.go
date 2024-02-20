@@ -43,7 +43,7 @@ func InitStartBlock(db db.DB, ethClientFactory types.EthClientFactory, l1 config
 		log.Errorf("failed to find contract deployment block: %v", err)
 		return err
 	}
-	log.Infof("get block %d", startBlock.Uint64())
+	log.Infof("get block %d", startBlock)
 
 	return setStartBlock(db, startBlock.Uint64())
 }
@@ -54,6 +54,7 @@ func findContractDeploymentBlock(ctx context.Context, eth types.EthClient, contr
 		return nil, err
 	}
 	firstBlock := findCode(ctx, eth, contract, 0, latestBlock.Number().Int64())
+	log.Infof("find code at %d", firstBlock)
 	return big.NewInt(firstBlock), nil
 }
 
