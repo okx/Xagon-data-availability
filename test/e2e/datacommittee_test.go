@@ -65,7 +65,7 @@ func TestDataCommittee(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	authL2, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL2ChainID)
 	require.NoError(t, err)
-	authL1, err := operations.GetAuth(operations.DefaultL1AdminPrivateKey, operations.DefaultL1ChainID)
+	authL1, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL1ChainID)
 	require.NoError(t, err)
 	clientL2, err := ethclient.Dial(operations.DefaultL2NetworkURL)
 	require.NoError(t, err)
@@ -285,12 +285,12 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			WsURL:                "ws://l1:8546",
-			RpcURL:               "http://l1:8545",
+			WsURL:                  "ws://l1:8546",
+			RpcURL:                 "http://l1:8545",
 			PolygonValidiumAddress: operations.DefaultL1CDKValidiumSmartContract,
-			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
-			Timeout:              cTypes.Duration{Duration: time.Second},
-			RetryPeriod:          cTypes.Duration{Duration: time.Second},
+			DataCommitteeAddress:   operations.DefaultL1DataCommitteeContract,
+			Timeout:                cTypes.Duration{Duration: time.Second},
+			RetryPeriod:            cTypes.Duration{Duration: time.Second},
 		},
 		PrivateKey: cTypes.KeystoreFileConfig{
 			Path:     ksFile,
@@ -300,7 +300,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "x1-data-availability-db-" + strconv.Itoa(m.i),
+			Host:      "x1-validium-data-node-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -362,19 +362,19 @@ func startDACMember(t *testing.T, m member) {
 
 func stopDACMember(t *testing.T, m member) {
 	out, err := exec.Command(
-		"docker", "kill", "cdk-data-availability-"+strconv.Itoa(m.i),
+		"docker", "kill", "x1-data-availability-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "rm", "cdk-data-availability-"+strconv.Itoa(m.i),
+		"docker", "rm", "x1-data-availability-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "kill", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "x1-validium-data-node-db-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "rm", "cdk-validium-data-node-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "x1-validium-data-node-db-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 }

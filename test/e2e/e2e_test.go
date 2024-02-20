@@ -19,7 +19,7 @@ import (
 func initTest(t *testing.T) (*testClient, *ecdsa.PrivateKey) {
 	const (
 		url         = "http://localhost:8444"
-		memberAddr  = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+		memberAddr  = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
 		privKeyPath = "../config/sequencer.keystore"
 		privKeyPass = "testonly"
 	)

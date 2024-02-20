@@ -1,17 +1,17 @@
 version: "3.5"
 networks:
   default:
-    name: cdk-data-availability
+    name: x1-data-availability
 
 services:
 
-  cdk-data-availability:
-    container_name: cdk-data-availability
+  x1-data-availability:
+    container_name: x1-data-availability
     restart: unless-stopped
     depends_on:
-      cdk-data-availability-db:
+      x1-data-availability-db:
         condition: service_healthy
-    image: cdk-data-availability
+    image: x1-data-availability
     deploy:
       resources:
         limits:
@@ -26,10 +26,10 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/cdk-data-availability run --cfg /app/config.toml"
+      - "/app/x1-data-availability run --cfg /app/config.toml"
 
-  cdk-data-availability-db:
-    container_name: cdk-data-availability-db
+  x1-data-availability-db:
+    container_name: x1-data-availability-db
     restart: unless-stopped
     image: postgres
     healthcheck:
