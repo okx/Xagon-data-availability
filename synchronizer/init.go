@@ -43,6 +43,7 @@ func InitStartBlock(db db.DB, ethClientFactory types.EthClientFactory, l1 config
 		log.Errorf("failed to find contract deployment block: %v", err)
 		return err
 	}
+	log.Infof("get block %d", startBlock.Uint64())
 
 	return setStartBlock(db, startBlock.Uint64())
 }
