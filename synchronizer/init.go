@@ -66,8 +66,10 @@ func findCode(ctx context.Context, eth types.EthClient, address common.Address, 
 	}
 	midBlock := (startBlock + endBlock) / 2 //nolint:gomnd
 	if codeLen := codeLen(ctx, eth, address, midBlock); codeLen > minCodeLen {
+		time.Sleep(200 * time.Millisecond)
 		return findCode(ctx, eth, address, startBlock, midBlock)
 	} else {
+		time.Sleep(200 * time.Millisecond)
 		return findCode(ctx, eth, address, midBlock+1, endBlock)
 	}
 }
