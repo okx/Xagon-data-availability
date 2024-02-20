@@ -41,7 +41,7 @@ const (
 	ksFile           = "/tmp/pkey"
 	cfgFile          = "/tmp/dacnodeconfigfile.json"
 	ksPass           = "pass"
-	dacNodeContainer = "x1-data-availability"
+	dacNodeContainer = "cdk-data-availability"
 	stopDacs         = true
 )
 
@@ -65,7 +65,7 @@ func TestDataCommittee(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	authL2, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL2ChainID)
 	require.NoError(t, err)
-	authL1, err := operations.GetAuth(operations.DefaultL1AdminPrivateKey, operations.DefaultL1ChainID)
+	authL1, err := operations.GetAuth(operations.DefaultSequencerPrivateKey, operations.DefaultL1ChainID)
 	require.NoError(t, err)
 	clientL2, err := ethclient.Dial(operations.DefaultL2NetworkURL)
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestDataCommittee(t *testing.T) {
 		membs = append(membs, member{
 			addr: crypto.PubkeyToAddress(pk.PublicKey),
 			pk:   pk,
-			url:  fmt.Sprintf("http://x1-data-availability-%d:420%d", i, i),
+			url:  fmt.Sprintf("http://cdk-data-availability-%d:420%d", i, i),
 			i:    i,
 		})
 	}
@@ -285,12 +285,12 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			WsURL:                "ws://l1:8546",
-			RpcURL:               "http://l1:8545",
+			WsURL:                  "ws://l1:8546",
+			RpcURL:                 "http://l1:8545",
 			PolygonValidiumAddress: operations.DefaultL1CDKValidiumSmartContract,
-			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
-			Timeout:              cTypes.Duration{Duration: time.Second},
-			RetryPeriod:          cTypes.Duration{Duration: time.Second},
+			DataCommitteeAddress:   operations.DefaultL1DataCommitteeContract,
+			Timeout:                cTypes.Duration{Duration: time.Second},
+			RetryPeriod:            cTypes.Duration{Duration: time.Second},
 		},
 		PrivateKey: cTypes.KeystoreFileConfig{
 			Path:     ksFile,
@@ -300,7 +300,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "x1-data-availability-db-" + strconv.Itoa(m.i),
+			Host:      "cdk-validium-data-node-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -322,7 +322,7 @@ func startDACMember(t *testing.T, m member) {
 		"-e", "POSTGRES_PASSWORD=committee_password",
 		"-e", "POSTGRES_USER=committee_user",
 		"-p", fmt.Sprintf("553%d:5432", m.i),
-		"--network", "x1-data-availability",
+		"--network", "cdk-data-availability",
 		"postgres", "-N", "500",
 	)
 	out, err := dbCmd.CombinedOutput()
@@ -346,13 +346,13 @@ func startDACMember(t *testing.T, m member) {
 	cmd := exec.Command(
 		"docker", "run", "-d",
 		"-p", fmt.Sprintf("%d:%d", port, port),
-		"--name", "x1-data-availability-"+strconv.Itoa(m.i),
+		"--name", "cdk-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
-		"--network", "x1-data-availability",
+		"--network", "cdk-data-availability",
 		dacNodeContainer,
 		"/bin/sh", "-c",
-		"/app/x1-data-availability run --cfg /app/config.json",
+		"/app/cdk-data-availability run --cfg /app/config.json",
 	)
 	out, err = cmd.CombinedOutput()
 	require.NoError(t, err, string(out))
