@@ -37,7 +37,7 @@ func InitStartBlock(db db.DB, ethClientFactory types.EthClientFactory, l1 config
 		log.Errorf("failed to create eth client: %v", err)
 		return err
 	}
-
+	log.Infof("find code at start to ")
 	startBlock, err := findContractDeploymentBlock(ctx, ethClient, common.HexToAddress(l1.PolygonValidiumAddress))
 	if err != nil {
 		log.Errorf("failed to find contract deployment block: %v", err)
@@ -53,8 +53,9 @@ func findContractDeploymentBlock(ctx context.Context, eth types.EthClient, contr
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("latest block %d", latestBlock.Number().Uint64())
 	firstBlock := findCode(ctx, eth, contract, 0, latestBlock.Number().Int64())
-	log.Infof("find code at %d", firstBlock)
+	log.Infof("first block %d", firstBlock)
 	return big.NewInt(firstBlock), nil
 }
 
