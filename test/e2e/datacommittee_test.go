@@ -41,7 +41,7 @@ const (
 	ksFile           = "/tmp/pkey"
 	cfgFile          = "/tmp/dacnodeconfigfile.json"
 	ksPass           = "pass"
-	dacNodeContainer = "x1-data-availability"
+	dacNodeContainer = "xlayer-data-availability"
 	stopDacs         = true
 )
 
@@ -90,7 +90,7 @@ func TestDataCommittee(t *testing.T) {
 		membs = append(membs, member{
 			addr: crypto.PubkeyToAddress(pk.PublicKey),
 			pk:   pk,
-			url:  fmt.Sprintf("http://x1-data-availability-%d:420%d", i, i),
+			url:  fmt.Sprintf("http://xlayer-data-availability-%d:420%d", i, i),
 			i:    i,
 		})
 	}
@@ -321,7 +321,7 @@ func startDACMember(t *testing.T, m member) {
 	cmd := exec.Command(
 		"docker", "run", "-d",
 		"-p", fmt.Sprintf("%d:%d", port, port),
-		"--name", "x1-data-availability-"+strconv.Itoa(m.i),
+		"--name", "xlayer-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
 		"--network", "xlayer-data-availability",
@@ -337,15 +337,15 @@ func startDACMember(t *testing.T, m member) {
 
 func stopDACMember(t *testing.T, m member) {
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "x1-data-availability-"+strconv.Itoa(m.i),
+		"docker", "kill", "xlayer-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "x1-data-availability-"+strconv.Itoa(m.i),
+		"docker", "rm", "xlayer-data-availability-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "kill", "x1-data-availability-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "xlayer-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 	assert.NoError(t, exec.Command(
-		"docker", "rm", "x1-data-availability-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "xlayer-data-availability-db-"+strconv.Itoa(m.i),
 	).Run())
 }
