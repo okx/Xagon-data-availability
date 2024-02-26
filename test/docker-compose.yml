@@ -1,17 +1,17 @@
 version: "3.5"
 networks:
   default:
-    name: x1-data-availability
+    name: xlayer-data-availability
 
 services:
 
-  x1-data-availability:
-    container_name: x1-data-availability
+  xlayer-data-availability:
+    container_name: xlayer-data-availability
     restart: unless-stopped
     depends_on:
-      x1-data-availability-db:
+      xlayer-data-availability-db:
         condition: service_healthy
-    image: x1-data-availability
+    image: xlayer-data-availability
     deploy:
       resources:
         limits:
@@ -26,10 +26,10 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/x1-data-availability run --cfg /app/config.toml"
+      - "/app/xlayer-data-availability run --cfg /app/config.toml"
 
-  x1-data-availability-db:
-    container_name: x1-data-availability-db
+  xlayer-data-availability-db:
+    container_name: xlayer-data-availability-db
     restart: unless-stopped
     image: postgres
     healthcheck:

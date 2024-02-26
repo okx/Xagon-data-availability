@@ -4,10 +4,10 @@ STOP := docker compose down
 run: stop ## Runs a full node for e2e
 	docker compose up -d zkevm-state-db
 	docker compose up -d zkevm-pool-db
-	docker compose up -d x1-data-availability-db
+	docker compose up -d xlayer-data-availability-db
 	docker compose up -d l1
 	sleep 1
-	docker compose up -d x1-data-availability
+	docker compose up -d xlayer-data-availability
 	docker compose up -d zkevm-prover
 	docker compose up -d zkevm-node
 
@@ -59,10 +59,10 @@ stop-network: ## Stops the l1 network
 
 .PHONY: run-local
 run-local: run-network ## Run network and db for local instance
-	docker compose up -d x1-data-availability-db
+	docker compose up -d xlayer-data-availability-db
 
 .PHONY: stop-local
 stop-local: stop-network ## Run network and db for local instance
-	docker compose stop x1-data-availability-db && docker compose rm -f x1-data-availability-db
+	docker compose stop xlayer-data-availability-db && docker compose rm -f xlayer-data-availability-db
 
 
