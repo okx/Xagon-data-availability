@@ -20,7 +20,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const appName = "x1-data-availability"
+const appName = "xlayer-data-availability"
 
 var (
 	configFileFlag = cli.StringFlag{

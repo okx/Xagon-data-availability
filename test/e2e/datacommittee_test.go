@@ -262,8 +262,8 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			RpcURL:               "http://x1-mock-l1-network:8545",
-			WsURL:                "ws://x1-mock-l1-network:8546",
+			RpcURL:               "http://xlayer-mock-l1-network:8545",
+			WsURL:                "ws://xlayer-mock-l1-network:8546",
 			ZkEVMAddress:         operations.DefaultL1ZkEVMSmartContract,
 			DataCommitteeAddress: operations.DefaultL1DataCommitteeContract,
 			Timeout:              cTypes.Duration{Duration: time.Second},
@@ -277,7 +277,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "x1-data-availability-db-" + strconv.Itoa(m.i),
+			Host:      "xlayer-data-availability-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -297,7 +297,7 @@ func startDACMember(t *testing.T, m member) {
 		"-e", "POSTGRES_PASSWORD=committee_password",
 		"-e", "POSTGRES_USER=committee_user",
 		"-p", fmt.Sprintf("553%d:5432", m.i),
-		"--network", "x1-data-availability",
+		"--network", "xlayer-data-availability",
 		"postgres", "-N", "500",
 	)
 	out, err := dbCmd.CombinedOutput()
@@ -324,10 +324,10 @@ func startDACMember(t *testing.T, m member) {
 		"--name", "x1-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
-		"--network", "x1-data-availability",
+		"--network", "xlayer-data-availability",
 		dacNodeContainer,
 		"/bin/sh", "-c",
-		"/app/x1-data-availability run --cfg /app/config.json",
+		"/app/xlayer-data-availability run --cfg /app/config.json",
 	)
 	out, err = cmd.CombinedOutput()
 	require.NoError(t, err, string(out))

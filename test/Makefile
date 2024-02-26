@@ -2,23 +2,23 @@ STOP := docker compose down
 
 .PHONY: run
 run: ## Runs a full node for e2e
-	docker compose up -d x1-state-db
-	docker compose up -d x1-pool-db
-	docker compose up -d x1-event-db
-	docker compose up -d x1-data-availability-db
-	docker compose up -d x1-mock-l1-network
+	docker compose up -d xlayer-state-db
+	docker compose up -d xlayer-pool-db
+	docker compose up -d xlayer-event-db
+	docker compose up -d xlayer-data-availability-db
+	docker compose up -d xlayer-mock-l1-network
 	sleep 1
-	docker compose up -d x1-prover
-	docker compose up -d x1-approve
+	docker compose up -d xlayer-prover
+	docker compose up -d xlayer-approve
 	sleep 3
-	docker compose up -d x1-sync
+	docker compose up -d xlayer-sync
 	sleep 2
-	docker compose up -d x1-eth-tx-manager
-	docker compose up -d x1-sequencer
-	docker compose up -d x1-sequence-sender
-	docker compose up -d x1-l2gaspricer
-	docker compose up -d x1-aggregator
-	docker compose up -d x1-json-rpc
+	docker compose up -d xlayer-eth-tx-manager
+	docker compose up -d xlayer-sequencer
+	docker compose up -d xlayer-sequence-sender
+	docker compose up -d xlayer-l2gaspricer
+	docker compose up -d xlayer-aggregator
+	docker compose up -d xlayer-json-rpc
 	sleep 2
 	docker compose up -d x1-data-availability
 
@@ -49,40 +49,40 @@ help: ## Prints this help
 
 .PHONY: run-node
 run-node: ## Runs the node
-	docker compose up -d x1-eth-tx-manager
-	docker compose up -d x1-sync
+	docker compose up -d xlayer-eth-tx-manager
+	docker compose up -d xlayer-sync
 	sleep 2
-	docker compose up -d x1-sequencer
-	docker compose up -d x1-sequence-sender
-	docker compose up -d x1-l2gaspricer
-	docker compose up -d x1-aggregator
-	docker compose up -d x1-json-rpc
+	docker compose up -d xlayer-sequencer
+	docker compose up -d xlayer-sequence-sender
+	docker compose up -d xlayer-l2gaspricer
+	docker compose up -d xlayer-aggregator
+	docker compose up -d xlayer-json-rpc
 
 .PHONY: stop-node
 stop-node: ## Stops the node
-	docker compose stop x1-sequencer && docker compose rm -f x1-sequencer
-	docker compose stop x1-sequence-sender && docker compose rm -f x1-sequence-sender
-	docker compose stop x1-json-rpc && docker compose rm -f x1-json-rpc
-	docker compose stop x1-l2gaspricer && docker compose rm -f x1-l2gaspricer
-	docker compose stop x1-aggregator && docker compose rm -f x1-aggregator
-	docker compose stop x1-sync && docker compose rm -f x1-sync
-	docker compose stop x1-eth-tx-manager && docker compose rm -f x1-eth-tx-manager
+	docker compose stop xlayer-sequencer && docker compose rm -f xlayer-sequencer
+	docker compose stop xlayer-sequence-sender && docker compose rm -f xlayer-sequence-sender
+	docker compose stop xlayer-json-rpc && docker compose rm -f xlayer-json-rpc
+	docker compose stop xlayer-l2gaspricer && docker compose rm -f xlayer-l2gaspricer
+	docker compose stop xlayer-aggregator && docker compose rm -f xlayer-aggregator
+	docker compose stop xlayer-sync && docker compose rm -f xlayer-sync
+	docker compose stop xlayer-eth-tx-manager && docker compose rm -f xlayer-eth-tx-manager
 
 .PHONY: run-network
 run-network: ## Runs the l1 network
-	docker compose up -d x1-mock-l1-network
+	docker compose up -d xlayer-mock-l1-network
 
 .PHONY: stop-network
 stop-network: ## Stops the l1 network
-	docker compose stop x1-mock-l1-network && docker compose rm -f x1-mock-l1-network
+	docker compose stop xlayer-mock-l1-network && docker compose rm -f xlayer-mock-l1-network
 
 .PHONY: run-approve-matic
 run-approve-matic: ## Runs approve in node container
-	docker compose up -d x1-approve
+	docker compose up -d xlayer-approve
 
 .PHONY: stop-approve-matic
 stop-approve-matic: ## Stops approve in node container
-	docker compose stop x1-approve && docker compose rm -f x1-approve
+	docker compose stop xlayer-approve && docker compose rm -f xlayer-approve
 
 ### manual utility to stop dac nodes that were started by e2e, but not stopped by e2e ###
 .PHONY: stop-dac-nodes
@@ -94,7 +94,7 @@ stop-dac-nodes:
 .PHONY: stop-dac-dbs
 stop-dac-dbs:
 	for i in 0 1 2 3 4 ; do \
-  		(docker kill x1-data-node-db-$$i || true) && (docker rm x1-data-node-db-$$i || true); \
+  		(docker kill xlayer-data-node-db-$$i || true) && (docker rm xlayer-data-node-db-$$i || true); \
   	done
 
 .PHONY: stop-dacs
