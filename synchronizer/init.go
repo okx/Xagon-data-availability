@@ -59,7 +59,7 @@ func findContractDeploymentBlock(ctx context.Context, eth types.EthClient, contr
 // findCode is an O(log(n)) search for the inception block of a contract at the given address
 func findCode(ctx context.Context, eth types.EthClient, address common.Address, startBlock, endBlock int64) int64 {
 	log.Infof("searching for contract code at block %d", startBlock)
-	time.Sleep(1 * time.Second)
+	time.Sleep(50 * time.Millisecond)
 	if startBlock == endBlock {
 		return startBlock
 	}
