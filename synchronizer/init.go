@@ -50,6 +50,7 @@ func InitStartBlock(db db.DB, ethClientFactory types.EthClientFactory, l1 config
 func findContractDeploymentBlock(ctx context.Context, eth types.EthClient, contract common.Address) (*big.Int, error) {
 	latestBlock, err := eth.BlockByNumber(ctx, nil)
 	if err != nil {
+		log.Errorf("failed to get latest block: %v", err)
 		return nil, err
 	}
 	firstBlock := findCode(ctx, eth, contract, 0, latestBlock.Number().Int64())

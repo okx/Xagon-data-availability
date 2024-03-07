@@ -220,7 +220,10 @@ func (bs *BatchSynchronizer) handleEvent(event *polygonvalidium.PolygonvalidiumS
 	txData := tx.Data()
 	keys, err := UnpackTxData(txData)
 	if err != nil {
-		return err
+		keys, err = UnpackTxDataFork6(txData)
+		if err != nil {
+			return err
+		}
 	}
 	// The event has the _last_ batch number & list of hashes. Each hash is
 	// in order, so the batch number can be computed from position in array
