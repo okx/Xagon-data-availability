@@ -1,7 +1,7 @@
 version: "3.5"
 networks:
   default:
-    name: x1-data-availability
+    name: x1
 
 services:
 
