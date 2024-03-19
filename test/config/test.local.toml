@@ -3,8 +3,8 @@ PrivateKey = {Path = "config/test-member.keystore", Password = "testonly"}
 [L1]
 WsURL = "ws://127.0.0.1:8546"
 RpcURL = "http://127.0.0.1:8545"
-PolygonValidiumAddress = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"
-DataCommitteeAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
+PolygonValidiumAddress = "0x975725832B4909Aab87D3604A0b501569dbBE7A9"
+DataCommitteeAddress = "0x2f08F654B896208dD968aFdAEf733edC5FF62c03"
 Timeout = "3m"
 RetryPeriod = "5s"
 BlockBatchSize = 8

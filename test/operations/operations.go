@@ -50,13 +50,13 @@ const (
 	DefaultL1ChainID uint64 = 1337
 
 	// DefaultL1DataCommitteeContract is the l1 data committee contract address
-	DefaultL1DataCommitteeContract = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
+	DefaultL1DataCommitteeContract = "0x2f08F654B896208dD968aFdAEf733edC5FF62c03"
 
 	// DefaultTimeoutTxToBeMined is the timeout for blocks to be mined
 	DefaultTimeoutTxToBeMined = 1 * time.Minute
 
 	// DefaultL1CDKValidiumSmartContract is the l1 CDK validium contract address
-	DefaultL1CDKValidiumSmartContract = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"
+	DefaultL1CDKValidiumSmartContract = "0x975725832B4909Aab87D3604A0b501569dbBE7A9"
 )
 
 var (

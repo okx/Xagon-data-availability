@@ -30,7 +30,7 @@ func Test_Defaults(t *testing.T) {
 		},
 		{
 			path:          "L1.PolygonValidiumAddress",
-			expectedValue: "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
+			expectedValue: "0x975725832B4909Aab87D3604A0b501569dbBE7A9",
 		},
 		{
 			path:          "L1.Timeout",
