@@ -44,7 +44,7 @@ const (
 	DefaultSequencerPrivateKey = "0xde3ca643a52f5543e84ba984c4419ff40dbabd0e483c31c1d09fee8168d68e38"
 
 	// DefaultL2ChainID is the l2 chain id
-	DefaultL2ChainID uint64 = 1001
+	DefaultL2ChainID uint64 = 195
 
 	// DefaultL1ChainID is the l1 chain id
 	DefaultL1ChainID uint64 = 1337
