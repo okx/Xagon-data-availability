@@ -81,10 +81,10 @@ services:
       - "full"
       - "--rpc.allow-unprotected-txs"
 
-##### zkevm-node components #####
+##### x1-node components #####
 
-  zkevm-state-db:
-    container_name: zkevm-state-db
+  x1-state-db:
+    container_name: x1-state-db
     image: postgres
     deploy:
       resources:
@@ -102,8 +102,8 @@ services:
       - POSTGRES_DB=state_db
     command: ["postgres", "-N", "500"]
 
-  zkevm-pool-db:
-    container_name: zkevm-pool-db
+  x1-pool-db:
+    container_name: x1-pool-db
     image: postgres
     deploy:
       resources:
@@ -119,8 +119,8 @@ services:
       - POSTGRES_DB=pool_db
     command: ["postgres", "-N", "500"]
 
-  zkevm-prover:
-    container_name: zkevm-prover
+  x1-prover:
+    container_name: x1-prover
     platform: linux/amd64
     image: hermeznetwork/zkevm-prover:v5.0.3
     ports:
@@ -133,8 +133,8 @@ services:
     command: >
       zkProver -c /usr/src/app/config.json
 
-  zkevm-node:
-    container_name: zkevm-node
+  x1-node:
+    container_name: x1-node
     image: okexchain/x1-node:origin_release_v0.3.0_20240318080219_e0ef30d4
     ports:
       - 8123:8123
