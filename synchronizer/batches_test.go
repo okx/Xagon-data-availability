@@ -306,7 +306,7 @@ func TestBatchSynchronizer_HandleEvent(t *testing.T) {
 	methodDefinition, ok := a.Methods["sequenceBatchesValidium"]
 	require.True(t, ok)
 
-	data, err := methodDefinition.Inputs.Pack(batchData, common.HexToAddress("0xABCD"), []byte{22, 23, 24})
+	data, err := methodDefinition.Inputs.Pack(batchData, uint64(0), uint64(0), common.HexToAddress("0xABCD"), []byte{22, 23, 24})
 	require.NoError(t, err)
 
 	tx := ethTypes.NewTx(

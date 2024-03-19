@@ -220,10 +220,7 @@ func (bs *BatchSynchronizer) handleEvent(event *polygonvalidium.PolygonvalidiumS
 	txData := tx.Data()
 	keys, err := UnpackTxData(txData)
 	if err != nil {
-		keys, err = UnpackTxDataFork6(txData)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	// The event has the _last_ batch number & list of hashes. Each hash is
 	// in order, so the batch number can be computed from position in array
@@ -252,6 +249,7 @@ func (bs *BatchSynchronizer) handleEvent(event *polygonvalidium.PolygonvalidiumS
 		if err != nil {
 			return err
 		}
+		log.Infof("resolved missing data for number %d, key %v", key.number, key.hash.Hex())
 		data = append(data, *value)
 	}
 	// Finally, store the data
