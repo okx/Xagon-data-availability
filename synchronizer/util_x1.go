@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/0xPolygon/cdk-data-availability/etherman/smartcontracts/oldpolygonzkevm"
+	"github.com/0xPolygon/cdk-data-availability/log"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -17,19 +18,23 @@ func UnpackTxDataFork6(txData []byte) ([]common.Hash, error) {
 	}
 	method, err := a.MethodById(txData[:4])
 	if err != nil {
+		log.Errorf("failed to get method: %v", err)
 		return nil, err
 	}
 	data, err := method.Inputs.Unpack(txData[4:])
 	if err != nil {
+		log.Errorf("failed to unpack data: %v", err)
 		return nil, err
 	}
 	var batches []oldpolygonzkevm.PolygonZkEVMBatchData
 	bytes, err := json.Marshal(data[0])
 	if err != nil {
+		log.Errorf("failed to marshal data: %v", err)
 		return nil, err
 	}
 	err = json.Unmarshal(bytes, &batches)
 	if err != nil {
+		log.Errorf("failed to unmarshal data: %v", err)
 		return nil, err
 	}
 
