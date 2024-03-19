@@ -41,7 +41,7 @@ const (
 	DefaultL2NetworkURL = "http://localhost:8123"
 
 	// DefaultSequencerPrivateKey is the sequencer private key
-	DefaultSequencerPrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+	DefaultSequencerPrivateKey = "0xde3ca643a52f5543e84ba984c4419ff40dbabd0e483c31c1d09fee8168d68e38"
 
 	// DefaultL2ChainID is the l2 chain id
 	DefaultL2ChainID uint64 = 1001
@@ -391,13 +391,13 @@ func ApplyL2Txs(ctx context.Context, txs []*ethTypes.Transaction, auth *bind.Tra
 
 // CollectDockerLogs retrieves the logs from Docker containers and writes them into the logger
 func CollectDockerLogs(dacIndices []int) {
-	cmd := exec.Command("docker", "logs", "zkevm-node")
+	cmd := exec.Command("docker", "logs", "x1-node")
 	out, _ := cmd.CombinedOutput()
 	log.Debug("DOCKER LOGS ZKEVM-NODE: ", string(out))
 
 	for i := 0; i < len(dacIndices); i++ {
 		idx := dacIndices[i]
-		nodeName := fmt.Sprintf("cdk-data-availability-%d", idx)
+		nodeName := fmt.Sprintf("x1-data-availability-%d", idx)
 		cmd = exec.Command("docker", "logs", "--tail", "1000", nodeName)
 
 		out, _ = cmd.CombinedOutput()

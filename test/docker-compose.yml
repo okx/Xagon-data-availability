@@ -48,8 +48,8 @@ services:
       - "-N"
       - "500"
 
-  l1:
-    container_name: l1
+  x1-mock-l1-network:
+    container_name: x1-mock-l1-network
     image: okexchain/x1-geth:e2e_v0.2.0_20240318
     healthcheck:
       test: [ "CMD-SHELL", "geth attach --datadir /geth_data --exec eth.blockNumber" ]
