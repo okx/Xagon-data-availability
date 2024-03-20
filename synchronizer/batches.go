@@ -249,6 +249,7 @@ func (bs *BatchSynchronizer) handleEvent(event *polygonvalidium.PolygonvalidiumS
 		if err != nil {
 			return err
 		}
+		log.Infof("resolved missing data for number %d, key %v", key.number, key.hash.Hex())
 		data = append(data, *value)
 	}
 	// Finally, store the data
