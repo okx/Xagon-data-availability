@@ -2,14 +2,14 @@ STOP := docker compose down
 
 .PHONY: run
 run: stop ## Runs a full node for e2e
-	docker compose up -d x1-state-db
-	docker compose up -d x1-pool-db
-	docker compose up -d x1-data-availability-db
-	docker compose up -d x1-mock-l1-network
+	docker compose up -d xlayer-state-db
+	docker compose up -d xlayer-pool-db
+	docker compose up -d xlayer-data-availability-db
+	docker compose up -d xlayer-mock-l1-network
 	sleep 1
-	docker compose up -d x1-data-availability
-	docker compose up -d x1-prover
-	docker compose up -d x1-node
+	docker compose up -d xlayer-data-availability
+	docker compose up -d xlayer-prover
+	docker compose up -d xlayer-node
 
 .PHONY: stop
 stop: ## Stop a full data node
@@ -43,26 +43,26 @@ help: ## Prints this help
 
 .PHONY: run-node
 run-node: ## Runs the node
-	docker compose up -d x1-node
+	docker compose up -d xlayer-node
 
 .PHONY: stop-node
 stop-node: ## Stops the node
-	docker compose stop x1-node && docker compose rm -f x1-node
+	docker compose stop xlayer-node && docker compose rm -f xlayer-node
 
 .PHONY: run-network
-run-network: ## Runs the x1-mock-l1-network network
-	docker compose up -d x1-mock-l1-network
+run-network: ## Runs the xlayer-mock-l1-network network
+	docker compose up -d xlayer-mock-l1-network
 
 .PHONY: stop-network
-stop-network: ## Stops the x1-mock-l1-network network
-	docker compose stop x1-mock-l1-network && docker compose rm -f x1-mock-l1-network
+stop-network: ## Stops the xlayer-mock-l1-network network
+	docker compose stop xlayer-mock-l1-network && docker compose rm -f xlayer-mock-l1-network
 
 .PHONY: run-local
 run-local: run-network ## Run network and db for local instance
-	docker compose up -d x1-data-availability-db
+	docker compose up -d xlayer-data-availability-db
 
 .PHONY: stop-local
 stop-local: stop-network ## Run network and db for local instance
-	docker compose stop x1-data-availability-db && docker compose rm -f x1-data-availability-db
+	docker compose stop xlayer-data-availability-db && docker compose rm -f xlayer-data-availability-db
 
 

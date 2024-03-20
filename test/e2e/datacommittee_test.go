@@ -41,7 +41,7 @@ const (
 	ksFile           = "/tmp/pkey"
 	cfgFile          = "/tmp/dacnodeconfigfile.json"
 	ksPass           = "pass"
-	dacNodeContainer = "x1-data-availability"
+	dacNodeContainer = "xlayer-data-availability"
 	stopDacs         = true
 )
 
@@ -78,7 +78,7 @@ func TestDataCommittee(t *testing.T) {
 		clientL1,
 	)
 	require.NoError(t, err)
-	_, err = validiumContract.SetTrustedSequencerURL(authL1, "http://x1-node:8123")
+	_, err = validiumContract.SetTrustedSequencerURL(authL1, "http://xlayer-node:8123")
 	require.NoError(t, err)
 
 	dacSC, err := polygondatacommittee.NewPolygondatacommittee(
@@ -97,7 +97,7 @@ func TestDataCommittee(t *testing.T) {
 		membs = append(membs, member{
 			addr: crypto.PubkeyToAddress(pk.PublicKey),
 			pk:   pk,
-			url:  fmt.Sprintf("http://x1-data-availability-%d:420%d", i, i),
+			url:  fmt.Sprintf("http://xlayer-data-availability-%d:420%d", i, i),
 			i:    i,
 		})
 	}
@@ -285,8 +285,8 @@ func createKeyStore(pk *ecdsa.PrivateKey, outputDir, password string) error {
 func startDACMember(t *testing.T, m member) {
 	dacNodeConfig := config.Config{
 		L1: config.L1Config{
-			WsURL:                  "ws://x1-mock-l1-network:8546",
-			RpcURL:                 "http://x1-mock-l1-network:8545",
+			WsURL:                  "ws://xlayer-mock-l1-network:8546",
+			RpcURL:                 "http://xlayer-mock-l1-network:8545",
 			PolygonValidiumAddress: operations.DefaultL1CDKValidiumSmartContract,
 			DataCommitteeAddress:   operations.DefaultL1DataCommitteeContract,
 			Timeout:                cTypes.Duration{Duration: time.Second},
@@ -300,7 +300,7 @@ func startDACMember(t *testing.T, m member) {
 			Name:      "committee_db",
 			User:      "committee_user",
 			Password:  "committee_password",
-			Host:      "x1-data-availability-db-" + strconv.Itoa(m.i),
+			Host:      "xlayer-data-availability-db-" + strconv.Itoa(m.i),
 			Port:      "5432",
 			EnableLog: false,
 			MaxConns:  10,
@@ -322,7 +322,7 @@ func startDACMember(t *testing.T, m member) {
 		"-e", "POSTGRES_PASSWORD=committee_password",
 		"-e", "POSTGRES_USER=committee_user",
 		"-p", fmt.Sprintf("553%d:5432", m.i),
-		"--network", "x1",
+		"--network", "xlayer",
 		"postgres", "-N", "500",
 	)
 	out, err := dbCmd.CombinedOutput()
@@ -346,13 +346,13 @@ func startDACMember(t *testing.T, m member) {
 	cmd := exec.Command(
 		"docker", "run", "-d",
 		"-p", fmt.Sprintf("%d:%d", port, port),
-		"--name", "x1-data-availability-"+strconv.Itoa(m.i),
+		"--name", "xlayer-data-availability-"+strconv.Itoa(m.i),
 		"-v", cfgFile+":/app/config.json",
 		"-v", ksFile+":"+ksFile,
-		"--network", "x1",
+		"--network", "xlayer",
 		dacNodeContainer,
 		"/bin/sh", "-c",
-		"/app/x1-data-availability run --cfg /app/config.json",
+		"/app/xlayer-data-availability run --cfg /app/config.json",
 	)
 	out, err = cmd.CombinedOutput()
 	require.NoError(t, err, string(out))
@@ -362,19 +362,19 @@ func startDACMember(t *testing.T, m member) {
 
 func stopDACMember(t *testing.T, m member) {
 	out, err := exec.Command(
-		"docker", "kill", "x1-data-availability-"+strconv.Itoa(m.i),
+		"docker", "kill", "xlayer-data-availability-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "rm", "x1-data-availability-"+strconv.Itoa(m.i),
+		"docker", "rm", "xlayer-data-availability-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "kill", "x1-data-availability-db-"+strconv.Itoa(m.i),
+		"docker", "kill", "xlayer-data-availability-db-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 	out, err = exec.Command(
-		"docker", "rm", "x1-data-availability-db-"+strconv.Itoa(m.i),
+		"docker", "rm", "xlayer-data-availability-db-"+strconv.Itoa(m.i),
 	).CombinedOutput()
 	assert.NoError(t, err, string(out))
 }

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for x in x1-data-availability x1-data-availability-db; do
+for x in xlayer-data-availability xlayer-data-availability-db; do
   echo $x
   for i in 0 1 2 3 4; do
     docker kill $x-$i || true
