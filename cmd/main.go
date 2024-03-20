@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const appName = "x1-data-availability"
+const appName = "xlayer-data-availability" //nolint:gosec
 
 var (
 	configFileFlag = cli.StringFlag{

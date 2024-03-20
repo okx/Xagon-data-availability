@@ -391,13 +391,13 @@ func ApplyL2Txs(ctx context.Context, txs []*ethTypes.Transaction, auth *bind.Tra
 
 // CollectDockerLogs retrieves the logs from Docker containers and writes them into the logger
 func CollectDockerLogs(dacIndices []int) {
-	cmd := exec.Command("docker", "logs", "x1-node")
+	cmd := exec.Command("docker", "logs", "xlayer-node")
 	out, _ := cmd.CombinedOutput()
 	log.Debug("DOCKER LOGS ZKEVM-NODE: ", string(out))
 
 	for i := 0; i < len(dacIndices); i++ {
 		idx := dacIndices[i]
-		nodeName := fmt.Sprintf("x1-data-availability-%d", idx)
+		nodeName := fmt.Sprintf("xlayer-data-availability-%d", idx)
 		cmd = exec.Command("docker", "logs", "--tail", "1000", nodeName)
 
 		out, _ = cmd.CombinedOutput()
