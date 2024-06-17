@@ -47,6 +47,13 @@ func main() {
 			Action:  start,
 			Flags:   []cli.Flag{&configFileFlag},
 		},
+		{
+			Name:    "rpc",
+			Aliases: []string{},
+			Usage:   fmt.Sprintf("Sync data form RPC %v", appName),
+			Action:  startSyncRpc,
+			Flags:   []cli.Flag{&configFileFlag},
+		},
 	}
 
 	err := app.Run(os.Args)

@@ -1,7 +1,13 @@
 STOP := docker compose down
 
+
 .PHONY: run
 run: stop ## Runs a full node for e2e
+	docker compose up -d xlayer-data-availability-db
+	docker compose up -d xlayer-data-availability-rpc
+
+.PHONY: run-bak
+run-bak: stop ## Runs a full node for e2e
 	docker compose up -d xlayer-state-db
 	docker compose up -d xlayer-pool-db
 	docker compose up -d xlayer-data-availability-db

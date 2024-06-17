@@ -1,3 +1,7 @@
+L2RpcURL = "https://testrpc.xlayer.tech/"
+MaxBatchSize = 500
+IntervalTime = "1ms"
+
 PrivateKey = {Path = "/pk/test-member.keystore", Password = "testonly"}
 
 [L1]

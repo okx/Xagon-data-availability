@@ -24,11 +24,14 @@ const (
 
 // Config represents the full configuration of the data node
 type Config struct {
-	PrivateKey types.KeystoreFileConfig
-	DB         db.Config
-	Log        log.Config
-	RPC        rpc.Config
-	L1         L1Config
+	L2RpcURL     string         `mapstructure:"L2RpcURL"`
+	MaxBatchSize uint64         `mapstructure:"MaxBatchSize"`
+	IntervalTime types.Duration `mapstructure:"IntervalTime"`
+	PrivateKey   types.KeystoreFileConfig
+	DB           db.Config
+	Log          log.Config
+	RPC          rpc.Config
+	L1           L1Config
 
 	PermitApiAddress common.Address `mapstructure:"PermitApiAddress"`
 }

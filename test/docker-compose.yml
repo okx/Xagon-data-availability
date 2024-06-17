@@ -26,7 +26,7 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/xlayer-data-availability run --cfg /app/config.toml"
+      - "/app/xlayer-data-availability rpc --cfg /app/config.toml"
 
   xlayer-data-availability-db:
     container_name: xlayer-data-availability-db
@@ -39,6 +39,8 @@ services:
       retries: 5
     ports:
       - 5434:5432
+    volumes:
+      - ./data/:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=committee_user
       - POSTGRES_PASSWORD=committee_password
