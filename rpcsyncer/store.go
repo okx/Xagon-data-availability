@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-const dbTimeout = 2 * time.Second
+const dbTimeout = 30 * time.Second
 
 const l1SyncTask = "L2BatchTask"
 
