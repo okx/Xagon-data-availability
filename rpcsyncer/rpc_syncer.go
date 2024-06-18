@@ -51,7 +51,7 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			}
 			log.Infof("starting from block %v, max block %v", start, l2MaxBatch)
 			if start > l2MaxBatch {
-				log.Infof("no new blocks to sync")
+				log.Infof("no new blocks to sync, sleep 10 seconds")
 				time.Sleep(10 * time.Second)
 				continue
 			}
