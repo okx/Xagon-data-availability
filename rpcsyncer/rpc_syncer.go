@@ -36,11 +36,6 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 	log.Infof("starting rpc syncer")
 
 	start, _ := getStartBlock(syncer.db)
-	l2MaxBatch, err := BatchNumber(syncer.l2RPCUrl)
-	if err != nil {
-		log.Fatal("error getting max batch: %v", err)
-	}
-	log.Infof("starting from block %v, max block %v", start, l2MaxBatch)
 
 	for {
 		select {
@@ -50,6 +45,15 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			}
 		default:
 			time.Sleep(syncer.intervalTime)
+			l2MaxBatch, err := BatchNumber(syncer.l2RPCUrl)
+			if err != nil {
+				log.Fatal("error getting max batch: %v", err)
+			}
+			log.Infof("starting from block %v, max block %v", start, l2MaxBatch)
+			if start > l2MaxBatch {
+				log.Infof("no new blocks to sync")
+				continue
+			}
 			to := start + syncer.maxBatchSize - 1
 			if to > l2MaxBatch {
 				to = l2MaxBatch
