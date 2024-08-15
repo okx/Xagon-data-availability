@@ -49,7 +49,7 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			if err != nil {
 				log.Fatal("error getting max batch: %v", err)
 			}
-			log.Infof("starting from block %v, max block %v", start, l2MaxBatch)
+			log.Infof("starting from block %v, max batch %v", start, l2MaxBatch)
 			if start > l2MaxBatch {
 				log.Infof("no new blocks to sync, sleep 10 seconds")
 				time.Sleep(10 * time.Second)
