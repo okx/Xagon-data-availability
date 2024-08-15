@@ -1,4 +1,4 @@
-L2RpcURL = "https://testrpc.xlayer.tech/"
+L2RpcURL = "https://rpc.xlayer.tech/"
 MaxBatchSize = 1000
 IntervalTime = "1ms"
 
