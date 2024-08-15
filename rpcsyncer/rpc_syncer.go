@@ -76,7 +76,7 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			if err != nil {
 				log.Fatal("error storing off chain data: %v", err)
 			}
-			log.Infof("stored off chain data for blocks from %v to %v, store size:%v", start, to, len(offChainData))
+			log.Infof("stored off chain data for batchs from %v to %v, store size:%v", start, to, len(offChainData))
 			if setStartBlock(syncer.db, to) != nil {
 				log.Fatal("error setting start block: %v", err)
 			}
