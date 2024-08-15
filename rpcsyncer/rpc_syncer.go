@@ -49,12 +49,17 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			if err != nil {
 				log.Fatal("error getting max batch: %v", err)
 			}
-			log.Infof("starting from block %v, max batch %v", start, l2MaxBatch)
+			log.Infof("starting from batch %v, max batch %v", start, l2MaxBatch)
 			if start > l2MaxBatch {
 				log.Infof("no new blocks to sync, sleep 10 seconds")
 				time.Sleep(10 * time.Second)
 				continue
 			}
+
+			if start > 10 {
+				start = start - 10
+			}
+
 			to := start + syncer.maxBatchSize - 1
 			if to > l2MaxBatch {
 				to = l2MaxBatch
@@ -76,7 +81,7 @@ func (syncer *RPCSyncer) Start(ctx context.Context) {
 			if err != nil {
 				log.Fatal("error storing off chain data: %v", err)
 			}
-			log.Infof("stored off chain data for batchs from %v to %v, store size:%v", start, to, len(offChainData))
+			log.Infof("stored off chain data for batchs [%v,%v], size:%v", start, to, len(offChainData))
 			if setStartBlock(syncer.db, to) != nil {
 				log.Fatal("error setting start block: %v", err)
 			}
