@@ -41,22 +41,22 @@ const (
 	DefaultL2NetworkURL = "http://localhost:8123"
 
 	// DefaultSequencerPrivateKey is the sequencer private key
-	DefaultSequencerPrivateKey = "0xde3ca643a52f5543e84ba984c4419ff40dbabd0e483c31c1d09fee8168d68e38"
+	DefaultSequencerPrivateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
 	// DefaultL2ChainID is the l2 chain id
-	DefaultL2ChainID uint64 = 195
+	DefaultL2ChainID uint64 = 1001
 
 	// DefaultL1ChainID is the l1 chain id
 	DefaultL1ChainID uint64 = 1337
 
 	// DefaultL1DataCommitteeContract is the l1 data committee contract address
-	DefaultL1DataCommitteeContract = "0x2f08F654B896208dD968aFdAEf733edC5FF62c03"
+	DefaultL1DataCommitteeContract = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
 
 	// DefaultTimeoutTxToBeMined is the timeout for blocks to be mined
 	DefaultTimeoutTxToBeMined = 1 * time.Minute
 
 	// DefaultL1CDKValidiumSmartContract is the l1 CDK validium contract address
-	DefaultL1CDKValidiumSmartContract = "0x975725832B4909Aab87D3604A0b501569dbBE7A9"
+	DefaultL1CDKValidiumSmartContract = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"
 )
 
 var (
@@ -391,18 +391,32 @@ func ApplyL2Txs(ctx context.Context, txs []*ethTypes.Transaction, auth *bind.Tra
 
 // CollectDockerLogs retrieves the logs from Docker containers and writes them into the logger
 func CollectDockerLogs(dacIndices []int) {
-	cmd := exec.Command("docker", "logs", "xlayer-node")
-	out, _ := cmd.CombinedOutput()
-	log.Debug("DOCKER LOGS ZKEVM-NODE: ", string(out))
-
+	ReportContainerLogs("zkevm-node", -1)
+	ReportContainerLogs("l1", 100)
+	ReportContainerLogs("zkevm-prover", 100)
 	for i := 0; i < len(dacIndices); i++ {
 		idx := dacIndices[i]
-		nodeName := fmt.Sprintf("xlayer-data-availability-%d", idx)
-		cmd = exec.Command("docker", "logs", "--tail", "1000", nodeName)
-
-		out, _ = cmd.CombinedOutput()
-		log.Debug(fmt.Sprintf("DOCKER LOGS DAN-%d: ", idx), string(out))
+		nodeName := fmt.Sprintf("cdk-data-availability-%d", idx)
+		ReportContainerLogs(nodeName, 100)
 	}
+}
+
+func ReportContainerLogs(name string, max int) {
+	args := []string{"logs"}
+	if max > 0 {
+		args = append(args, "--tail", fmt.Sprintf("%d", max))
+	}
+	args = append(args, name)
+
+	cmd := exec.Command("docker", args...)
+	out, _ := cmd.CombinedOutput()
+	log.Debugf("CONTAINER LOG %s:\n%s", name, string(out))
+}
+
+func ShowRunningDockerContainers() {
+	cmd := exec.Command("docker", "ps")
+	out, _ := cmd.CombinedOutput()
+	log.Debug("CURRENT DOCKER CONTAINERS: \n", string(out))
 }
 
 // WaitL2BlockToBeVirtualized waits until a L2 Block has been virtualized or the given timeout expires.

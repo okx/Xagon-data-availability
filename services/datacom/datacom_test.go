@@ -1,6 +1,7 @@
 package datacom
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"testing"
@@ -21,18 +22,11 @@ func TestDataCom_SignSequence(t *testing.T) {
 	t.Parallel()
 
 	type testConfig struct {
-		beginStateTransactionReturns []interface{}
-		storeOffChainDataReturns     []interface{}
-		rollbackReturns              []interface{}
-		commitReturns                []interface{}
-		sender                       *ecdsa.PrivateKey
-		signer                       *ecdsa.PrivateKey
-		expectedError                string
-	}
-
-	sequence := types.Sequence{
-		types.ArgBytes([]byte{0, 1}),
-		types.ArgBytes([]byte{2, 3}),
+		storeOffChainDataReturns []interface{}
+		sender                   *ecdsa.PrivateKey
+		signer                   *ecdsa.PrivateKey
+		sequence                 types.Sequence
+		expectedError            string
 	}
 
 	privateKey, err := crypto.GenerateKey()
@@ -41,46 +35,44 @@ func TestDataCom_SignSequence(t *testing.T) {
 	otherPrivateKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
-	testFn := func(cfg testConfig) {
+	testFn := func(t *testing.T, cfg testConfig) {
+		t.Helper()
+
 		var (
 			signer         = privateKey
 			signedSequence *types.SignedSequence
 			err            error
 		)
 
-		txMock := mocks.NewTx(t)
 		dbMock := mocks.NewDB(t)
-		if cfg.beginStateTransactionReturns != nil {
-			dbMock.On("BeginStateTransaction", mock.Anything).Return(cfg.beginStateTransactionReturns...).Once()
-		} else if cfg.storeOffChainDataReturns != nil {
-			dbMock.On("BeginStateTransaction", mock.Anything).Return(txMock, nil).Once()
-			dbMock.On("StoreOffChainData", mock.Anything, sequence.OffChainData(), txMock).Return(
-				cfg.storeOffChainDataReturns...).Once()
 
-			if cfg.rollbackReturns != nil {
-				txMock.On("Rollback").Return(cfg.rollbackReturns...).Once()
-			} else {
-				txMock.On("Commit").Return(cfg.commitReturns...).Once()
-			}
+		if len(cfg.storeOffChainDataReturns) > 0 {
+			dbMock.On("StoreOffChainData", mock.Anything, cfg.sequence.OffChainData()).Return(
+				cfg.storeOffChainDataReturns...).Once()
 		}
 
 		ethermanMock := mocks.NewEtherman(t)
 
-		ethermanMock.On("TrustedSequencer").Return(crypto.PubkeyToAddress(otherPrivateKey.PublicKey), nil).Once()
-		ethermanMock.On("TrustedSequencerURL").Return("http://some-url", nil).Once()
+		ethermanMock.On("TrustedSequencer", mock.Anything).Return(crypto.PubkeyToAddress(otherPrivateKey.PublicKey), nil).Once()
+		ethermanMock.On("TrustedSequencerURL", mock.Anything).Return("http://some-url", nil).Once()
 
-		sequencer, err := sequencer.NewTracker(config.L1Config{
+		sqr := sequencer.NewTracker(config.L1Config{
 			Timeout:     cfgTypes.Duration{Duration: time.Minute},
 			RetryPeriod: cfgTypes.Duration{Duration: time.Second},
 		}, ethermanMock)
-		require.NoError(t, err)
+
+		sqr.Start(context.Background())
 
 		if cfg.sender != nil {
-			signedSequence, err = sequence.Sign(cfg.sender)
+			signature, err := cfg.sequence.Sign(cfg.sender)
 			require.NoError(t, err)
+			signedSequence = &types.SignedSequence{
+				Sequence:  cfg.sequence,
+				Signature: signature,
+			}
 		} else {
 			signedSequence = &types.SignedSequence{
-				Sequence:  sequence,
+				Sequence:  cfg.sequence,
 				Signature: []byte{},
 			}
 		}
@@ -89,7 +81,7 @@ func TestDataCom_SignSequence(t *testing.T) {
 			signer = cfg.signer
 		}
 
-		dce := NewDataComEndpoints(dbMock, signer, sequencer, common.Address{})
+		dce := NewEndpoints(dbMock, signer, sqr, common.Address{})
 
 		sig, err := dce.SignSequence(*signedSequence)
 		if cfg.expectedError != "" {
@@ -99,7 +91,8 @@ func TestDataCom_SignSequence(t *testing.T) {
 			require.NotEmpty(t, sig)
 		}
 
-		txMock.AssertExpectations(t)
+		sqr.Stop()
+
 		dbMock.AssertExpectations(t)
 		ethermanMock.AssertExpectations(t)
 	}
@@ -107,69 +100,39 @@ func TestDataCom_SignSequence(t *testing.T) {
 	t.Run("Failed to verify sender", func(t *testing.T) {
 		t.Parallel()
 
-		testFn(testConfig{
+		testFn(t, testConfig{
 			expectedError: "failed to verify sender",
+			sequence: types.Sequence{
+				types.ArgBytes{0, 1},
+				types.ArgBytes{2, 3},
+			},
 		})
 	})
 
 	t.Run("Unauthorized sender", func(t *testing.T) {
 		t.Parallel()
 
-		testFn(testConfig{
+		testFn(t, testConfig{
 			sender:        privateKey,
 			expectedError: "unauthorized",
-		})
-	})
-
-	t.Run("Unauthorized sender", func(t *testing.T) {
-		t.Parallel()
-
-		testFn(testConfig{
-			sender:        privateKey,
-			expectedError: "unauthorized",
-		})
-	})
-
-	t.Run("Fail to begin state transaction", func(t *testing.T) {
-		t.Parallel()
-
-		testFn(testConfig{
-			sender:                       otherPrivateKey,
-			expectedError:                "failed to connect to the state",
-			beginStateTransactionReturns: []interface{}{nil, errors.New("error")},
-		})
-	})
-
-	t.Run("Fail to store off chain data - rollback fails", func(t *testing.T) {
-		t.Parallel()
-
-		testFn(testConfig{
-			sender:                   otherPrivateKey,
-			expectedError:            "failed to rollback db transaction",
-			storeOffChainDataReturns: []interface{}{errors.New("error")},
-			rollbackReturns:          []interface{}{errors.New("rollback fails")},
+			sequence: types.Sequence{
+				types.ArgBytes{0, 1},
+				types.ArgBytes{2, 3},
+			},
 		})
 	})
 
 	t.Run("Fail to store off chain data", func(t *testing.T) {
 		t.Parallel()
 
-		testFn(testConfig{
+		testFn(t, testConfig{
 			sender:                   otherPrivateKey,
 			expectedError:            "failed to store offchain data",
 			storeOffChainDataReturns: []interface{}{errors.New("error")},
-			rollbackReturns:          []interface{}{nil},
-		})
-	})
-
-	t.Run("Fail to commit tx", func(t *testing.T) {
-		t.Parallel()
-
-		testFn(testConfig{
-			sender:                   otherPrivateKey,
-			expectedError:            "failed to commit db transaction",
-			storeOffChainDataReturns: []interface{}{nil},
-			commitReturns:            []interface{}{errors.New("error")},
+			sequence: types.Sequence{
+				types.ArgBytes{0, 1},
+				types.ArgBytes{2, 3},
+			},
 		})
 	})
 
@@ -181,22 +144,169 @@ func TestDataCom_SignSequence(t *testing.T) {
 
 		key.D = common.Big0 // alter the key so that signing does not pass
 
-		testFn(testConfig{
+		testFn(t, testConfig{
 			sender:                   otherPrivateKey,
 			signer:                   key,
 			storeOffChainDataReturns: []interface{}{nil},
-			commitReturns:            []interface{}{nil},
 			expectedError:            "failed to sign",
+			sequence: types.Sequence{
+				types.ArgBytes{0, 1},
+				types.ArgBytes{2, 3},
+			},
 		})
 	})
 
 	t.Run("Happy path - sequence signed", func(t *testing.T) {
 		t.Parallel()
 
-		testFn(testConfig{
+		testFn(t, testConfig{
 			sender:                   otherPrivateKey,
 			storeOffChainDataReturns: []interface{}{nil},
-			commitReturns:            []interface{}{nil},
+			sequence: types.Sequence{
+				types.ArgBytes{0, 1},
+				types.ArgBytes{2, 3},
+			},
+		})
+	})
+}
+
+func TestDataCom_SignSequenceBanana(t *testing.T) {
+	t.Parallel()
+
+	type testConfig struct {
+		storeOffChainDataReturns []interface{}
+		sender                   *ecdsa.PrivateKey
+		signer                   *ecdsa.PrivateKey
+		sequence                 types.SequenceBanana
+		expectedError            string
+	}
+
+	sequenceSignerKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	trustedSequencerKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	unknownKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	testFn := func(t *testing.T, cfg testConfig) {
+		t.Helper()
+
+		var (
+			signer         = sequenceSignerKey
+			signedSequence *types.SignedSequenceBanana
+			err            error
+		)
+
+		dbMock := mocks.NewDB(t)
+
+		if len(cfg.storeOffChainDataReturns) > 0 {
+			dbMock.On("StoreOffChainData", mock.Anything, cfg.sequence.OffChainData()).Return(
+				cfg.storeOffChainDataReturns...).Once()
+		}
+
+		ethermanMock := mocks.NewEtherman(t)
+
+		ethermanMock.On("TrustedSequencer", mock.Anything).Return(crypto.PubkeyToAddress(trustedSequencerKey.PublicKey), nil).Once()
+		ethermanMock.On("TrustedSequencerURL", mock.Anything).Return("http://some-url", nil).Once()
+
+		sqr := sequencer.NewTracker(config.L1Config{
+			Timeout:     cfgTypes.Duration{Duration: time.Minute},
+			RetryPeriod: cfgTypes.Duration{Duration: time.Second},
+		}, ethermanMock)
+
+		sqr.Start(context.Background())
+
+		if cfg.sender != nil {
+			signature, err := cfg.sequence.Sign(cfg.sender)
+			require.NoError(t, err)
+			signedSequence = &types.SignedSequenceBanana{
+				Sequence:  cfg.sequence,
+				Signature: signature,
+			}
+		} else {
+			signedSequence = &types.SignedSequenceBanana{
+				Sequence:  cfg.sequence,
+				Signature: []byte{},
+			}
+		}
+
+		if cfg.signer != nil {
+			signer = cfg.signer
+		}
+
+		dce := NewEndpoints(dbMock, signer, sqr, common.Address{})
+
+		sig, err := dce.SignSequenceBanana(*signedSequence)
+		if cfg.expectedError != "" {
+			require.ErrorContains(t, err, cfg.expectedError)
+		} else {
+			require.NoError(t, err)
+			require.NotEmpty(t, sig)
+		}
+
+		sqr.Stop()
+
+		dbMock.AssertExpectations(t)
+		ethermanMock.AssertExpectations(t)
+	}
+
+	t.Run("Failed to verify sender", func(t *testing.T) {
+		t.Parallel()
+
+		testFn(t, testConfig{
+			expectedError: "failed to verify sender",
+			sequence:      types.SequenceBanana{},
+		})
+	})
+
+	t.Run("Unauthorized sender", func(t *testing.T) {
+		t.Parallel()
+
+		testFn(t, testConfig{
+			sender:        sequenceSignerKey,
+			expectedError: "unauthorized",
+			sequence:      types.SequenceBanana{},
+			signer:        unknownKey,
+		})
+	})
+
+	t.Run("Fail to store off chain data", func(t *testing.T) {
+		t.Parallel()
+
+		testFn(t, testConfig{
+			sender:                   trustedSequencerKey,
+			expectedError:            "failed to store offchain data",
+			storeOffChainDataReturns: []interface{}{errors.New("error")},
+			sequence:                 types.SequenceBanana{},
+		})
+	})
+
+	t.Run("Fail to sign sequence", func(t *testing.T) {
+		t.Parallel()
+
+		key, err := crypto.GenerateKey()
+		require.NoError(t, err)
+
+		key.D = common.Big0 // alter the key so that signing does not pass
+
+		testFn(t, testConfig{
+			sender:                   trustedSequencerKey,
+			signer:                   key,
+			storeOffChainDataReturns: []interface{}{nil},
+			expectedError:            "failed to sign",
+			sequence:                 types.SequenceBanana{},
+		})
+	})
+
+	t.Run("Happy path - sequence signed", func(t *testing.T) {
+		t.Parallel()
+
+		testFn(t, testConfig{
+			sender:                   trustedSequencerKey,
+			storeOffChainDataReturns: []interface{}{nil},
+			sequence:                 types.SequenceBanana{},
 		})
 	})
 }

@@ -1,6 +1,7 @@
 package sequencer
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +16,8 @@ import (
 )
 
 func Test_GetData(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name         string
 		batchNum     uint64
@@ -71,7 +74,10 @@ func Test_GetData(t *testing.T) {
 				var params []interface{}
 				require.NoError(t, json.Unmarshal(res.Params, &params))
 				require.Equal(t, float64(tt.batchNum), params[0])
-				require.True(t, params[1].(bool))
+
+				boolVal, ok := params[1].(bool)
+				require.True(t, ok, "params[1] is not of type bool")
+				require.True(t, boolVal)
 
 				if tt.statusCode > 0 {
 					w.WriteHeader(tt.statusCode)
@@ -82,7 +88,7 @@ func Test_GetData(t *testing.T) {
 			}))
 			defer svr.Close()
 
-			got, err := GetData(svr.URL, tt.batchNum)
+			got, err := GetData(context.Background(), svr.URL, tt.batchNum)
 			if tt.err != nil {
 				require.Error(t, err)
 				require.EqualError(t, tt.err, err.Error())

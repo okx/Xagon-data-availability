@@ -1,38 +1,90 @@
 package synchronizer
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"github.com/0xPolygon/cdk-data-availability/etherman/smartcontracts/polygonvalidium"
+	bananaValidium "github.com/0xPolygon/cdk-contracts-tooling/contracts/banana/polygonvalidiumetrog"
+	elderberryValidium "github.com/0xPolygon/cdk-contracts-tooling/contracts/elderberry/polygonvalidiumetrog"
+	etrogValidium "github.com/0xPolygon/cdk-contracts-tooling/contracts/etrog/polygonvalidiumetrog"
+	"github.com/0xPolygon/cdk-data-availability/log"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+var (
+	// methodIDSequenceBatchesValidiumEtrog is sequenceBatchesValidium method id in Etrog fork (0x2d72c248)
+	methodIDSequenceBatchesValidiumEtrog = crypto.Keccak256(
+		[]byte("sequenceBatchesValidium((bytes32,bytes32,uint64,bytes32)[],address,bytes)"),
+	)[:methodIDLen]
+
+	// methodIDSequenceBatchesValidiumElderberry is sequenceBatchesValidium method id in Elderberry fork (0xdb5b0ed7)
+	methodIDSequenceBatchesValidiumElderberry = crypto.Keccak256(
+		[]byte("sequenceBatchesValidium((bytes32,bytes32,uint64,bytes32)[],uint64,uint64,address,bytes)"),
+	)[:methodIDLen]
+	// methodIDSequenceBatchesValidiumBanana is sequenceBatchesValidium method id in Banana fork (0x165e8a8d)
+	methodIDSequenceBatchesValidiumBanana = crypto.Keccak256(
+		[]byte("sequenceBatchesValidium((bytes32,bytes32,uint64,bytes32)[],uint32,uint64,bytes32,address,bytes)"),
+	)[:methodIDLen]
+)
+
+const (
+	// methodIDLen represents method id size in bytes
+	methodIDLen = 4
 )
 
 // UnpackTxData unpacks the keys in a SequenceBatches event
 func UnpackTxData(txData []byte) ([]common.Hash, error) {
-	a, err := abi.JSON(strings.NewReader(polygonvalidium.PolygonvalidiumMetaData.ABI))
+	methodID := txData[:methodIDLen]
+
+	var (
+		a   abi.ABI
+		err error
+	)
+
+	if bytes.Equal(methodID, methodIDSequenceBatchesValidiumEtrog) {
+		a, err = abi.JSON(strings.NewReader(etrogValidium.PolygonvalidiumetrogMetaData.ABI))
+		if err != nil {
+			return nil, err
+		}
+	} else if bytes.Equal(methodID, methodIDSequenceBatchesValidiumElderberry) {
+		a, err = abi.JSON(strings.NewReader(elderberryValidium.PolygonvalidiumetrogMetaData.ABI))
+		if err != nil {
+			return nil, err
+		}
+	} else if bytes.Equal(methodID, methodIDSequenceBatchesValidiumBanana) {
+		a, err = abi.JSON(strings.NewReader(bananaValidium.PolygonvalidiumetrogMetaData.ABI))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("unrecognized method id: %s", hex.EncodeToString(methodID))
+	}
+
+	method, err := a.MethodById(methodID)
 	if err != nil {
 		return nil, err
 	}
 
-	method, err := a.MethodById(txData[:4])
+	data, err := method.Inputs.Unpack(txData[methodIDLen:])
 	if err != nil {
+		log.Errorf("error Unpack data: %v", err)
 		return nil, err
 	}
 
-	data, err := method.Inputs.Unpack(txData[4:])
-	if err != nil {
-		return nil, err
-	}
-
-	var batches []polygonvalidium.PolygonValidiumEtrogValidiumBatchData
 	bytes, err := json.Marshal(data[0])
 	if err != nil {
+		log.Errorf("error marshalling data: %v", err)
 		return nil, err
 	}
 
+	var batches []etrogValidium.PolygonValidiumEtrogValidiumBatchData
 	if err = json.Unmarshal(bytes, &batches); err != nil {
+		log.Errorf("error Unmarshal data: %v", err)
 		return nil, err
 	}
 

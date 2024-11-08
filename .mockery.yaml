@@ -36,12 +36,9 @@ packages:
       SequencerTracker:
         config:
           filename: sequencer_tracker.generated.go
-  github.com/0xPolygon/cdk-data-availability/types:
+  github.com/0xPolygon/cdk-data-availability/services/status:
     config:
     interfaces:
-      EthClient:
+      GapsDetector:
         config:
-          filename: eth_client.generated.go
-      EthClientFactory:
-        config:
-          filename: eth_client_factory.generated.go
+          filename: gaps_detector.generated.go

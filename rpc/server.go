@@ -108,7 +108,10 @@ func (s *Server) handle(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	w.Header().Set(
+		"Access-Control-Allow-Headers",
+		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization",
+	)
 
 	if (*req).Method == "OPTIONS" {
 		// TODO(pg): need to count it in the metrics?
@@ -156,7 +159,7 @@ func (s *Server) isSingleRequest(data []byte) (bool, Error) {
 	x := bytes.TrimLeft(data, " \t\r\n")
 
 	if len(x) == 0 {
-		return false, NewRPCError(InvalidRequestErrorCode, invalidJSONReqErr.Error())
+		return false, NewRPCError(InvalidRequestErrorCode, errInvalidJSONReq.Error())
 	}
 
 	return x[0] == '{', nil
@@ -213,7 +216,7 @@ func (s *Server) parseRequest(data []byte) (Request, error) {
 	var req Request
 
 	if err := json.Unmarshal(data, &req); err != nil {
-		return Request{}, NewRPCError(InvalidRequestErrorCode, invalidJSONReqErr.Error())
+		return Request{}, NewRPCError(InvalidRequestErrorCode, errInvalidJSONReq.Error())
 	}
 
 	return req, nil
@@ -223,7 +226,7 @@ func (s *Server) parseRequests(data []byte) ([]Request, error) {
 	var requests []Request
 
 	if err := json.Unmarshal(data, &requests); err != nil {
-		return nil, NewRPCError(InvalidRequestErrorCode, invalidJSONReqErr.Error())
+		return nil, NewRPCError(InvalidRequestErrorCode, errInvalidJSONReq.Error())
 	}
 
 	return requests, nil
@@ -240,21 +243,6 @@ func handleError(w http.ResponseWriter, err error) {
 	if err != nil {
 		log.Error(err)
 	}
-}
-
-// RPCErrorResponse formats error to be returned through RPC
-func RPCErrorResponse(code int, message string, err error) (interface{}, Error) {
-	return RPCErrorResponseWithData(code, message, nil, err)
-}
-
-// RPCErrorResponseWithData formats error to be returned through RPC
-func RPCErrorResponseWithData(code int, message string, data *[]byte, err error) (interface{}, Error) {
-	if err != nil {
-		log.Errorf("%v: %v", message, err.Error())
-	} else {
-		log.Error(message)
-	}
-	return nil, NewRPCErrorWithData(code, message, data)
 }
 
 func combinedLog(r *http.Request, start time.Time, httpStatus, dataLen int) {

@@ -10,82 +10,77 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-const dbTimeout = 2 * time.Second
+// SyncTask is the type of the sync task
+type SyncTask string
 
-const l1SyncTask = "L1"
+const (
+	// L1SyncTask is the name of the L1 sync task
+	L1SyncTask SyncTask = "L1"
 
-func getStartBlock(db dbTypes.DB) (uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	dbTimeout = 2 * time.Second
+)
+
+func getStartBlock(parentCtx context.Context, db dbTypes.DB, syncTask SyncTask) (uint64, error) {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
 	defer cancel()
 
-	start, err := db.GetLastProcessedBlock(ctx, l1SyncTask)
+	start, err := db.GetLastProcessedBlock(ctx, string(syncTask))
 	if err != nil {
-		log.Errorf("error retrieving last processed block, starting from 0: %v", err)
+		log.Errorf("error retrieving last processed block for %s task, starting from 0: %v", syncTask, err)
 	}
+
 	if start > 0 {
 		start = start - 1 // since a block may have been partially processed
 	}
+
 	return start, err
 }
 
-func setStartBlock(db dbTypes.DB, block uint64) error {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+func setStartBlock(parentCtx context.Context, db dbTypes.DB, block uint64, syncTask SyncTask) error {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
 	defer cancel()
 
-	var (
-		dbTx dbTypes.Tx
-		err  error
-	)
-
-	if dbTx, err = db.BeginStateTransaction(ctx); err != nil {
-		return err
-	}
-
-	if err = db.StoreLastProcessedBlock(ctx, l1SyncTask, block, dbTx); err != nil {
-		return err
-	}
-
-	if err = dbTx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return db.StoreLastProcessedBlock(ctx, block, string(syncTask))
 }
 
-func exists(db dbTypes.DB, key common.Hash) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+func storeUnresolvedBatchKeys(parentCtx context.Context, db dbTypes.DB, keys []types.BatchKey) error {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
 	defer cancel()
 
-	return db.Exists(ctx, key)
+	return db.StoreUnresolvedBatchKeys(ctx, keys)
 }
 
-func store(db dbTypes.DB, data []types.OffChainData) error {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+func getUnresolvedBatchKeys(parentCtx context.Context, db dbTypes.DB) ([]types.BatchKey, error) {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
 	defer cancel()
 
-	var (
-		dbTx dbTypes.Tx
-		err  error
-	)
-
-	if dbTx, err = db.BeginStateTransaction(ctx); err != nil {
-		return err
-	}
-
-	if err = db.StoreOffChainData(ctx, data, dbTx); err != nil {
-		rollback(err, dbTx)
-		return err
-	}
-
-	if err = dbTx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return db.GetUnresolvedBatchKeys(ctx, maxUnprocessedBatch)
 }
 
-func rollback(err error, dbTx dbTypes.Tx) {
-	if txErr := dbTx.Rollback(); txErr != nil {
-		log.Errorf("failed to roll back transaction after error %v : %v", err, txErr)
-	}
+func deleteUnresolvedBatchKeys(parentCtx context.Context, db dbTypes.DB, keys []types.BatchKey) error {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
+	defer cancel()
+
+	return db.DeleteUnresolvedBatchKeys(ctx, keys)
+}
+
+func listOffchainData(parentCtx context.Context, db dbTypes.DB, keys []common.Hash) ([]types.OffChainData, error) {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
+	defer cancel()
+
+	return db.ListOffChainData(ctx, keys)
+}
+
+func storeOffchainData(parentCtx context.Context, db dbTypes.DB, data []types.OffChainData) error {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
+	defer cancel()
+
+	return db.StoreOffChainData(ctx, data)
+}
+
+func detectOffchainDataGaps(parentCtx context.Context, db dbTypes.DB) (map[uint64]uint64, error) {
+	ctx, cancel := context.WithTimeout(parentCtx, dbTimeout)
+	defer cancel()
+
+	return db.DetectOffchainDataGaps(ctx)
 }

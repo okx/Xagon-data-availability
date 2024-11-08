@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (d *DataComEndpoints) isEmptyAddress(a common.Address) bool {
+func (d *Endpoints) isEmptyAddress(a common.Address) bool {
 	emptyAddress := common.Address{}
 	return bytes.Equal(a[:], emptyAddress[:])
 }

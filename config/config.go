@@ -35,13 +35,17 @@ type Config struct {
 
 // L1Config is a struct that defines L1 contract and service settings
 type L1Config struct {
-	WsURL                  string         `mapstructure:"WsURL"`
-	RpcURL                 string         `mapstructure:"RpcURL"`
-	PolygonValidiumAddress string         `mapstructure:"PolygonValidiumAddress"`
-	DataCommitteeAddress   string         `mapstructure:"DataCommitteeAddress"`
-	Timeout                types.Duration `mapstructure:"Timeout"`
-	RetryPeriod            types.Duration `mapstructure:"RetryPeriod"`
-	BlockBatchSize         uint           `mapstructure:"BlockBatchSize"`
+	RpcURL                     string         `mapstructure:"RpcURL"`
+	PolygonValidiumAddress     string         `mapstructure:"PolygonValidiumAddress"`
+	DataCommitteeAddress       string         `mapstructure:"DataCommitteeAddress"`
+	Timeout                    types.Duration `mapstructure:"Timeout"`
+	RetryPeriod                types.Duration `mapstructure:"RetryPeriod"`
+	BlockBatchSize             uint           `mapstructure:"BlockBatchSize"`
+	TrackSequencer             bool           `mapstructure:"TrackSequencer"`
+	TrackSequencerPollInterval types.Duration `mapstructure:"TrackSequencerPollInterval"`
+
+	// GenesisBlock represents the block number where PolygonValidium contract is deployed on L1
+	GenesisBlock uint64 `mapstructure:"GenesisBlock"`
 }
 
 // Load loads the configuration baseed on the cli context
@@ -74,7 +78,12 @@ func Load(ctx *cli.Context) (*Config, error) {
 
 	decodeHooks := []viper.DecoderConfigOption{
 		// this allows arrays to be decoded from env var separated by ",", example: MY_VAR="value1,value2,value3"
-		viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(mapstructure.TextUnmarshallerHookFunc(), mapstructure.StringToSliceHookFunc(","))),
+		viper.DecodeHook(
+			mapstructure.ComposeDecodeHookFunc(
+				mapstructure.TextUnmarshallerHookFunc(),
+				mapstructure.StringToSliceHookFunc(","),
+			),
+		),
 	}
 	err = viper.Unmarshal(&cfg, decodeHooks...)
 	return cfg, err

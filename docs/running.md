@@ -60,7 +60,7 @@ services:
     ports:
       - 5434:5432
     environment:
-      - POSTGRES_USER=committee_user            # CHANGE THIS: use your prefered user name
+      - POSTGRES_USER=committee_user            # CHANGE THIS: use your preferred user name
       - POSTGRES_PASSWORD=committee_password    # CHANGE THIS: use a safe and strong password
       - POSTGRES_DB=committee_db
     command:
@@ -76,13 +76,14 @@ services:
 PrivateKey = {Path = "/pk/test-member.keystore", Password = "testonly"} # CHANGE THIS (the password): according to the private key file password
 
 [L1]
-WsURL = "ws://URLofYourL1Node:8546"     # CHANGE THIS: use the URL of your L1 node
-RpcURL = "http://URLofYourL1Node:8545"  # CHANGE THIS: use the URL of your L1 node
-PolygonValidiumAddress = "0x975725832B4909Aab87D3604A0b501569dbBE7A9"       # CHANGE THIS: Address of the Validium smart contract
-DataCommitteeAddress = "0x2f08F654B896208dD968aFdAEf733edC5FF62c03"     # CHANGE THIS: Address of the data availability committee smart contract
+RpcURL = "http://URLofYourL1Node:8545"  # CHANGE THIS: use the URL of your L1 node, can be http(s) or ws(s)
+PolygonValidiumAddress = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"       # CHANGE THIS: Address of the Validium smart contract
+DataCommitteeAddress = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"     # CHANGE THIS: Address of the data availability committee smart contract
 Timeout = "3m"
 RetryPeriod = "5s"
 BlockBatchSize = 32
+TrackSequencer = true
+TrackSequencerPollInterval = "1m"
 
 [Log]
 Environment = "development" # "production" or "development"
