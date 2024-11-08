@@ -1,8 +1,8 @@
-# CDK Data Availability
+# X Layer CDK Data Availability
 
 ### Data Availability Layer for CDK Validium
 
-The cdk-data-availability project is a specialized Data Availability Node (DA Node) that is part of Polygon's CDK (Chain Development Kit) Validium.
+The xlayer-data-availability project is a specialized Data Availability Node (DA Node) that is part of Polygon's CDK (Chain Development Kit) Validium.
 
 ## Overview of Validium
 

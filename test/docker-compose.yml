@@ -26,7 +26,7 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/cdk-data-availability run --cfg /app/config.toml"
+      - "/app/xlayer-data-availability run --cfg /app/config.toml"
 
   cdk-data-availability-db:
     container_name: cdk-data-availability-db
