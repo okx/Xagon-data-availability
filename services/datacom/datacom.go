@@ -57,8 +57,9 @@ func (d *Endpoints) signSequence(signedSequence types.SignedSequenceInterface) (
 	if err != nil || d.isEmptyAddress(sender) {
 		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "failed to verify sender")
 	}
-	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, permitApiAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.permitApiAddress.String())
-	if sender != d.sequencerTracker.GetAddr()  && sender != d.permitApiAddress {
+	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, permitApiAddress:%s",
+		sender.String(), d.sequencerTracker.GetAddr().String(), d.permitApiAddress.String())
+	if sender != d.sequencerTracker.GetAddr() && sender != d.permitApiAddress {
 		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "unauthorized")
 	}
 
