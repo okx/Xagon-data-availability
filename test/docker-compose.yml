@@ -11,7 +11,7 @@ services:
     depends_on:
       cdk-data-availability-db:
         condition: service_healthy
-    image: cdk-data-availability
+    image: xlayer-data-availability
     deploy:
       resources:
         limits:
