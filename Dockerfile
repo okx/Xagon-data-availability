@@ -18,4 +18,4 @@ COPY --from=build /go/src/github.com/0xPolygon/cdk-data-availability/dist/cdk-da
 
 EXPOSE 8444
 
-CMD ["/bin/sh", "-c", "/app/cdk-data-availability run"]
+CMD ["/bin/sh", "-c", "/app/xlayer-data-availability run"]
