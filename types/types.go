@@ -15,10 +15,39 @@ const (
 	hexBitSize64 = 64
 )
 
+// DACStatus contains DAC status info
+type DACStatus struct {
+	Uptime                string `json:"uptime"`
+	Version               string `json:"version"`
+	KeyCount              uint64 `json:"key_count"`
+	BackfillProgress      uint64 `json:"backfill_progress"`
+	OffchainDataGapsExist bool   `json:"offchain_data_gaps_exist"`
+}
+
+// BatchKey is the pairing of batch number and data hash of a batch
+type BatchKey struct {
+	Number uint64
+	Hash   common.Hash
+}
+
 // OffChainData represents some data that is not stored on chain and should be preserved
 type OffChainData struct {
-	Key   common.Hash
-	Value []byte
+	Key      common.Hash
+	Value    []byte
+	BatchNum uint64
+}
+
+// RemoveDuplicateOffChainData removes duplicate off chain data
+func RemoveDuplicateOffChainData(ods []OffChainData) []OffChainData {
+	seen := make(map[common.Hash]struct{})
+	result := []OffChainData{}
+	for _, od := range ods {
+		if _, ok := seen[od.Key]; !ok {
+			seen[od.Key] = struct{}{}
+			result = append(result, od)
+		}
+	}
+	return result
 }
 
 // ArgUint64 helps to marshal uint64 values provided in the RPC requests
@@ -26,7 +55,7 @@ type ArgUint64 uint64
 
 // MarshalText marshals into text
 func (b ArgUint64) MarshalText() ([]byte, error) {
-	buf := make([]byte, 2) //nolint:gomnd
+	buf := make([]byte, 2) //nolint:mnd
 	copy(buf, `0x`)
 	buf = strconv.AppendUint(buf, uint64(b), hexBase)
 	return buf, nil

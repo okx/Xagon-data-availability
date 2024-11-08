@@ -26,6 +26,11 @@ ifndef CHECK_DOCKER
 	$(error "Docker is not installed. Please install Docker and retry.")
 endif
 
+clean:
+	env GO111MODULE=on go clean -cache
+	rm -fr build/_workspace/pkg/ $(GOBIN)/*
+
+
 # Targets that require the checks
 generate: check-go
 build: check-go
@@ -48,7 +53,7 @@ GOBASE := $(shell pwd)
 GOBIN := $(GOBASE)/dist
 GOOS := $(shell uname -s  | tr '[:upper:]' '[:lower:]')
 GOENVVARS := GOBIN=$(GOBIN) CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH)
-GOBINARY := xlayer-data-availability
+GOBINARY := cdk-data-availability
 GOCMD := $(GOBASE)/cmd
 
 LDFLAGS += -X 'github.com/0xPolygon/cdk-data-availability.Version=$(VERSION)'
@@ -66,15 +71,15 @@ build: ## Builds the binary locally into ./dist
 
 .PHONY: build-docker
 build-docker: ## Builds a docker image with the node binary
-	docker build -t xlayer-data-availability -f ./Dockerfile .
+	docker build -t cdk-data-availability -f ./Dockerfile .
 
 .PHONY: build-docker-nc
 build-docker-nc: ## Builds a docker image with the node binary - but without build cache
-	docker build --no-cache=true -t xlayer-data-availability -f ./Dockerfile .
+	docker build --no-cache=true -t cdk-data-availability -f ./Dockerfile .
 
 .PHONY: install-linter
 install-linter: ## Installs the linter
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.52.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.59.1
 
 .PHONY: lint
 lint: ## Runs the linter

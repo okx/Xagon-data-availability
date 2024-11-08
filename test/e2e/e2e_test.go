@@ -19,7 +19,7 @@ import (
 func initTest(t *testing.T) (*testClient, *ecdsa.PrivateKey) {
 	const (
 		url         = "http://localhost:8444"
-		memberAddr  = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+		memberAddr  = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
 		privKeyPath = "../config/sequencer.keystore"
 		privKeyPass = "testonly"
 	)
@@ -49,7 +49,7 @@ func TestSignSequence(t *testing.T) {
 
 	unexpectedSenderPrivKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
-	unexpectedSenderSignedSequence, err := expectedSequence.Sign(unexpectedSenderPrivKey)
+	unexpectedSenderSignature, err := expectedSequence.Sign(unexpectedSenderPrivKey)
 	require.NoError(t, err)
 	tSequences := []testSequences{
 		{
@@ -64,7 +64,7 @@ func TestSignSequence(t *testing.T) {
 			name: "signature_not_from_sender",
 			sequence: types.SignedSequence{
 				Sequence:  expectedSequence,
-				Signature: unexpectedSenderSignedSequence.Signature,
+				Signature: unexpectedSenderSignature,
 			},
 			expectedErr: errors.New("-32000 unauthorized"),
 		},
@@ -85,9 +85,12 @@ func TestSignSequence(t *testing.T) {
 	for _, ts := range tSequences {
 		t.Run(ts.name, func(t *testing.T) {
 			if ts.sequence.Signature == nil {
-				signedBatch, err := ts.sequence.Sequence.Sign(pk)
+				signature, err := ts.sequence.Sequence.Sign(pk)
 				require.NoError(t, err)
-				ts.sequence = *signedBatch
+				ts.sequence = types.SignedSequence{
+					Sequence:  ts.sequence.Sequence,
+					Signature: signature,
+				}
 			}
 			tc.signSequence(t, &ts.sequence, ts.expectedErr)
 		})
@@ -107,7 +110,7 @@ func newTestClient(url string, addr common.Address) *testClient {
 }
 
 func (tc *testClient) signSequence(t *testing.T, expected *types.SignedSequence, expectedErr error) {
-	if signature, err := tc.client.SignSequence(*expected); err != nil {
+	if signature, err := tc.client.SignSequence(context.Background(), *expected); err != nil {
 		assert.Equal(t, expectedErr.Error(), err.Error())
 	} else {
 		// Verify signature
@@ -116,6 +119,7 @@ func (tc *testClient) signSequence(t *testing.T, expected *types.SignedSequence,
 		actualAddr, err := expected.Signer()
 		require.NoError(t, err)
 		assert.Equal(t, tc.dacMemberAddr, actualAddr)
+
 		// Check that offchain data has been stored
 		expectedOffchainData := expected.Sequence.OffChainData()
 		for _, od := range expectedOffchainData {
@@ -125,6 +129,18 @@ func (tc *testClient) signSequence(t *testing.T, expected *types.SignedSequence,
 			)
 			require.NoError(t, err)
 			assert.Equal(t, od.Value, actualData)
+		}
+
+		hashes := make([]common.Hash, len(expectedOffchainData))
+		for i, od := range expectedOffchainData {
+			hashes[i] = od.Key
+		}
+
+		actualData, err := tc.client.ListOffChainData(context.Background(), hashes)
+		require.NoError(t, err)
+
+		for _, od := range expectedOffchainData {
+			assert.Equal(t, od.Value, actualData[od.Key])
 		}
 	}
 }

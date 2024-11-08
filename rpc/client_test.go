@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +12,8 @@ import (
 )
 
 func Test_JSONRPCCallWithContext(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		result     string
@@ -53,7 +54,7 @@ func Test_JSONRPCCallWithContext(t *testing.T) {
 			}))
 			defer svr.Close()
 
-			got, err := JSONRPCCallWithContext(context.Background(), svr.URL, "test")
+			got, err := JSONRPCCall(svr.URL, "test")
 			if tt.err != nil {
 				require.Error(t, err)
 				require.EqualError(t, tt.err, err.Error())

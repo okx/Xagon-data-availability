@@ -91,10 +91,10 @@ func NewLogger(cfg Config) (*zap.SugaredLogger, *zap.AtomicLevel, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	defer logger.Sync() //nolint:gosec,errcheck
+	defer logger.Sync() //nolint:errcheck
 
 	// skip 2 callers: one for our wrapper methods and one for the package functions
-	withOptions := logger.WithOptions(zap.AddCallerSkip(2)) //nolint:gomnd
+	withOptions := logger.WithOptions(zap.AddCallerSkip(2)) //nolint:mnd
 	return withOptions.Sugar(), &level, nil
 }
 
@@ -104,7 +104,7 @@ func WithFields(keyValuePairs ...interface{}) *Logger {
 	l := getDefaultLog().WithFields(keyValuePairs...)
 
 	// since we are returning a new instance, remove one caller from the
-	// stack, because we'll be calling the retruned Logger methods
+	// stack, because we'll be calling the returned Logger methods
 	// directly, not the package functions.
 	x := l.x.WithOptions(zap.AddCallerSkip(-1))
 	l.x = x

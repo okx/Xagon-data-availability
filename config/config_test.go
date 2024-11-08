@@ -21,16 +21,12 @@ func Test_Defaults(t *testing.T) {
 		expectedValue interface{}
 	}{
 		{
-			path:          "L1.WsURL",
+			path:          "L1.RpcURL",
 			expectedValue: "ws://127.0.0.1:8546",
 		},
 		{
-			path:          "L1.RpcURL",
-			expectedValue: "http://127.0.0.1:8545",
-		},
-		{
 			path:          "L1.PolygonValidiumAddress",
-			expectedValue: "0x975725832B4909Aab87D3604A0b501569dbBE7A9",
+			expectedValue: "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
 		},
 		{
 			path:          "L1.Timeout",
@@ -88,6 +84,59 @@ func Test_ConfigFileOverride(t *testing.T) {
 	cfg, err := Load(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "0xDEADBEEF", cfg.L1.PolygonValidiumAddress)
+}
+
+func Test_NewKeyFromKeystore(t *testing.T) {
+	t.Parallel()
+
+	t.Run("valid keystore file", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := types.KeystoreFileConfig{
+			Path:     "../test/config/test-member.keystore",
+			Password: "testonly",
+		}
+
+		key, err := NewKeyFromKeystore(cfg)
+		require.NoError(t, err)
+		require.NotNil(t, key)
+	})
+
+	t.Run("no path and password", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := types.KeystoreFileConfig{}
+
+		key, err := NewKeyFromKeystore(cfg)
+		require.NoError(t, err)
+		require.Nil(t, key)
+	})
+
+	t.Run("invalid keystore file", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := types.KeystoreFileConfig{
+			Path:     "non-existent.keystore",
+			Password: "testonly",
+		}
+
+		key, err := NewKeyFromKeystore(cfg)
+		require.ErrorContains(t, err, "no such file or directory")
+		require.Nil(t, key)
+	})
+
+	t.Run("invalid password", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := types.KeystoreFileConfig{
+			Path:     "../test/config/test-member.keystore",
+			Password: "invalid",
+		}
+
+		key, err := NewKeyFromKeystore(cfg)
+		require.ErrorContains(t, err, "could not decrypt key with given password")
+		require.Nil(t, key)
+	})
 }
 
 func getValueFromStruct(path string, object interface{}) interface{} {

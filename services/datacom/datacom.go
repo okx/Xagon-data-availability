@@ -16,33 +16,41 @@ import (
 // APIDATACOM is the namespace of the datacom service
 const APIDATACOM = "datacom"
 
-// DataComEndpoints contains implementations for the "datacom" RPC endpoints
-type DataComEndpoints struct {
+// Endpoints contains implementations for the "datacom" RPC endpoints
+type Endpoints struct {
 	db               db.DB
-	txMan            rpc.DBTxManager
 	privateKey       *ecdsa.PrivateKey
 	sequencerTracker *sequencer.Tracker
 
 	permitApiAddress common.Address
 }
 
-// NewDataComEndpoints returns DataComEndpoints
-func NewDataComEndpoints(
-	db db.DB, privateKey *ecdsa.PrivateKey, sequencerTracker *sequencer.Tracker,
-	permitApiAddress common.Address,
-) *DataComEndpoints {
-	return &DataComEndpoints{
+// NewEndpoints returns Endpoints
+func NewEndpoints(db db.DB, pk *ecdsa.PrivateKey, st *sequencer.Tracker, permitApiAddress common.Address) *Endpoints {
+	return &Endpoints{
 		db:               db,
-		privateKey:       privateKey,
-		sequencerTracker: sequencerTracker,
+		privateKey:       pk,
+		sequencerTracker: st,
 		permitApiAddress: permitApiAddress,
 	}
 }
 
-// SignSequence generates the accumulated input hash aka accInputHash of the sequence and sign it.
+// SignSequence generates the concatenation of hashes of the batch data of the sequence and sign it.
 // After storing the data that will be sent hashed to the contract, it returns the signature.
 // This endpoint is only accessible to the sequencer
-func (d *DataComEndpoints) SignSequence(signedSequence types.SignedSequence) (interface{}, rpc.Error) {
+func (d *Endpoints) SignSequence(signedSequence types.SignedSequence) (interface{}, rpc.Error) {
+	return d.signSequence(&signedSequence)
+}
+
+// SignSequenceBanana generates the accumulated input hash aka accInputHash of the sequence and sign it.
+// After storing the data that will be sent hashed to the contract, it returns the signature.
+// This endpoint is only accessible to the sequencer
+func (d *Endpoints) SignSequenceBanana(signedSequence types.SignedSequenceBanana) (interface{}, rpc.Error) {
+	log.Debugf("signing sequence, hash to sign: %s", common.BytesToHash(signedSequence.Sequence.HashToSign()))
+	return d.signSequence(&signedSequence)
+}
+
+func (d *Endpoints) signSequence(signedSequence types.SignedSequenceInterface) (interface{}, rpc.Error) {
 	// Verify that the request comes from the sequencer
 	sender, err := signedSequence.Signer()
 
@@ -50,27 +58,21 @@ func (d *DataComEndpoints) SignSequence(signedSequence types.SignedSequence) (in
 		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "failed to verify sender")
 	}
 	log.Infof("SignSequence, signedSequence sender: %v, sequencerTracker:%v, permitApiAddress:%s", sender.String(), d.sequencerTracker.GetAddr().String(), d.permitApiAddress.String())
-	if sender != d.sequencerTracker.GetAddr() && sender != d.permitApiAddress {
+	if sender != d.sequencerTracker.GetAddr()  && sender != d.permitApiAddress {
 		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, "unauthorized")
 	}
 
 	// Store off-chain data by hash (hash(L2Data): L2Data)
-	_, err = d.txMan.NewDbTxScope(d.db, func(ctx context.Context, dbTx db.Tx) (interface{}, rpc.Error) {
-		err := d.db.StoreOffChainData(ctx, signedSequence.Sequence.OffChainData(), dbTx)
-		if err != nil {
-			return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, fmt.Errorf("failed to store offchain data. Error: %w", err).Error())
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, err.Error())
+	if err = d.db.StoreOffChainData(context.Background(), signedSequence.OffChainData()); err != nil {
+		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode,
+			fmt.Errorf("failed to store offchain data. Error: %w", err).Error())
 	}
+
 	// Sign
-	signedSequenceByMe, err := signedSequence.Sequence.Sign(d.privateKey)
+	signature, err := signedSequence.Sign(d.privateKey)
 	if err != nil {
 		return "0x0", rpc.NewRPCError(rpc.DefaultErrorCode, fmt.Errorf("failed to sign. Error: %w", err).Error())
 	}
 	// Return signature
-	return signedSequenceByMe.Signature, nil
+	return signature, nil
 }

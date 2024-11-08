@@ -1,6 +1,7 @@
 package synchronizer
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -12,7 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_setStartBlock(t *testing.T) {
+func Test_getStartBlock(t *testing.T) {
+	t.Parallel()
+
 	testError := errors.New("test error")
 
 	tests := []struct {
@@ -22,28 +25,68 @@ func Test_setStartBlock(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "BeginStateTransaction returns error",
+			name: "GetLastProcessedBlock returns error",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockDB.On("BeginStateTransaction", mock.Anything).
-					Return(nil, testError)
+				mockDB.On("GetLastProcessedBlock", mock.Anything, "L1").
+					Return(uint64(0), testError)
 
 				return mockDB
 			},
-			block:   1,
+			block:   0,
 			wantErr: true,
 		},
 		{
-			name: "StoreLastProcessedBlock returns error",
+			name: "all good",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockTx := mocks.NewTx(t)
+				mockDB.On("GetLastProcessedBlock", mock.Anything, "L1").Return(uint64(5), nil)
 
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
+				return mockDB
+			},
+			block: 4,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
 
-				mockDB.On("StoreLastProcessedBlock", mock.Anything, "L1", uint64(2), mockTx).
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDB := tt.db(t)
+
+			if block, err := getStartBlock(context.Background(), testDB, L1SyncTask); tt.wantErr {
+				require.ErrorIs(t, err, testError)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.block, block)
+			}
+		})
+	}
+}
+
+func Test_setStartBlock(t *testing.T) {
+	t.Parallel()
+
+	testError := errors.New("test error")
+
+	tests := []struct {
+		name    string
+		db      func(t *testing.T) db.DB
+		block   uint64
+		wantErr bool
+	}{
+		{
+			name: "StoreLastProcessedBlock returns error",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("StoreLastProcessedBlock", mock.Anything, uint64(2), "L1").
 					Return(testError)
 
 				return mockDB
@@ -52,38 +95,12 @@ func Test_setStartBlock(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Commit returns error",
-			db: func(t *testing.T) db.DB {
-				mockDB := mocks.NewDB(t)
-
-				mockTx := mocks.NewTx(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
-
-				mockDB.On("StoreLastProcessedBlock", mock.Anything, "L1", uint64(3), mockTx).
-					Return(nil)
-
-				mockTx.On("Commit").
-					Return(testError)
-
-				return mockDB
-			},
-			block:   3,
-			wantErr: true,
-		},
-		{
 			name: "all good",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockTx := mocks.NewTx(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
-
-				mockDB.On("StoreLastProcessedBlock", mock.Anything, "L1", uint64(4), mockTx).
-					Return(nil)
-
-				mockTx.On("Commit").
+				mockDB.On("StoreLastProcessedBlock", mock.Anything, uint64(4), "L1").
 					Return(nil)
 
 				return mockDB
@@ -92,10 +109,14 @@ func Test_setStartBlock(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			testDB := tt.db(t)
 
-			if err := setStartBlock(testDB, tt.block); tt.wantErr {
+			if err := setStartBlock(context.Background(), testDB, tt.block, L1SyncTask); tt.wantErr {
 				require.ErrorIs(t, err, testError)
 			} else {
 				require.NoError(t, err)
@@ -104,51 +125,189 @@ func Test_setStartBlock(t *testing.T) {
 	}
 }
 
-func Test_exists(t *testing.T) {
+func Test_storeUnresolvedBatchKeys(t *testing.T) {
+	t.Parallel()
+
+	testError := errors.New("test error")
+	testData := []types.BatchKey{
+		{
+			Number: 1,
+			Hash:   common.HexToHash("0x01"),
+		},
+	}
+
 	tests := []struct {
-		name string
-		db   func(t *testing.T) db.DB
-		key  common.Hash
-		want bool
+		name    string
+		db      func(t *testing.T) db.DB
+		keys    []types.BatchKey
+		wantErr bool
 	}{
 		{
-			name: "Exists returns true",
+			name: "StoreUnresolvedBatchKeys returns error",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockDB.On("Exists", mock.Anything, common.HexToHash("0x01")).
-					Return(true)
+				mockDB.On("StoreUnresolvedBatchKeys", mock.Anything, testData).Return(testError)
 
 				return mockDB
 			},
-			key:  common.HexToHash("0x01"),
-			want: true,
+			keys:    testData,
+			wantErr: true,
 		},
 		{
-			name: "Exists returns false",
+			name: "all good",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockDB.On("Exists", mock.Anything, common.HexToHash("0x02")).
-					Return(false)
+				mockDB.On("StoreUnresolvedBatchKeys", mock.Anything, testData).Return(nil)
 
 				return mockDB
 			},
-			key:  common.HexToHash("0x02"),
-			want: false,
+			keys: testData,
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			testDB := tt.db(t)
 
-			got := exists(testDB, tt.key)
-			require.Equal(t, tt.want, got)
+			if err := storeUnresolvedBatchKeys(context.Background(), testDB, tt.keys); tt.wantErr {
+				require.ErrorIs(t, err, testError)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
 
-func Test_store(t *testing.T) {
+func Test_getUnresolvedBatchKeys(t *testing.T) {
+	t.Parallel()
+
+	testError := errors.New("test error")
+	testData := []types.BatchKey{
+		{
+			Number: 1,
+			Hash:   common.HexToHash("0x01"),
+		},
+	}
+
+	tests := []struct {
+		name    string
+		db      func(t *testing.T) db.DB
+		keys    []types.BatchKey
+		wantErr bool
+	}{
+		{
+			name: "GetUnresolvedBatchKeys returns error",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("GetUnresolvedBatchKeys", mock.Anything, uint(100)).
+					Return(nil, testError)
+
+				return mockDB
+			},
+			wantErr: true,
+		},
+		{
+			name: "all good",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("GetUnresolvedBatchKeys", mock.Anything, uint(100)).Return(testData, nil)
+
+				return mockDB
+			},
+			keys: testData,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDB := tt.db(t)
+
+			if keys, err := getUnresolvedBatchKeys(context.Background(), testDB); tt.wantErr {
+				require.ErrorIs(t, err, testError)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.keys, keys)
+			}
+		})
+	}
+}
+
+func Test_deleteUnresolvedBatchKeys(t *testing.T) {
+	t.Parallel()
+
+	testError := errors.New("test error")
+	testData := []types.BatchKey{
+		{
+			Number: 1,
+			Hash:   common.HexToHash("0x01"),
+		},
+	}
+
+	tests := []struct {
+		name    string
+		db      func(t *testing.T) db.DB
+		wantErr bool
+	}{
+		{
+			name: "DeleteUnresolvedBatchKeys returns error",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("DeleteUnresolvedBatchKeys", mock.Anything, testData).
+					Return(testError)
+
+				return mockDB
+			},
+			wantErr: true,
+		},
+		{
+			name: "all good",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("DeleteUnresolvedBatchKeys", mock.Anything, testData).
+					Return(nil)
+
+				return mockDB
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDB := tt.db(t)
+
+			if err := deleteUnresolvedBatchKeys(context.Background(), testDB, testData); tt.wantErr {
+				require.ErrorIs(t, err, testError)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func Test_storeOffchainData(t *testing.T) {
+	t.Parallel()
+
 	testError := errors.New("test error")
 	testData := []types.OffChainData{
 		{
@@ -164,47 +323,12 @@ func Test_store(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "BeginStateTransaction returns error",
-			db: func(t *testing.T) db.DB {
-				mockDB := mocks.NewDB(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(nil, testError)
-
-				return mockDB
-			},
-			data:    testData,
-			wantErr: true,
-		},
-		{
 			name: "StoreOffChainData returns error",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockTx := mocks.NewTx(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
-
-				mockDB.On("StoreOffChainData", mock.Anything, testData, mockTx).Return(testError)
-
-				mockTx.On("Rollback").Return(nil)
-
-				return mockDB
-			},
-			data:    testData,
-			wantErr: true,
-		},
-		{
-			name: "Commit returns error",
-			db: func(t *testing.T) db.DB {
-				mockDB := mocks.NewDB(t)
-
-				mockTx := mocks.NewTx(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
-
-				mockDB.On("StoreOffChainData", mock.Anything, testData, mockTx).Return(nil)
-
-				mockTx.On("Commit").Return(testError)
+				mockDB.On("StoreOffChainData", mock.Anything, testData).Return(testError)
 
 				return mockDB
 			},
@@ -214,15 +338,10 @@ func Test_store(t *testing.T) {
 		{
 			name: "all good",
 			db: func(t *testing.T) db.DB {
+				t.Helper()
 				mockDB := mocks.NewDB(t)
 
-				mockTx := mocks.NewTx(t)
-
-				mockDB.On("BeginStateTransaction", mock.Anything).Return(mockTx, nil)
-
-				mockDB.On("StoreOffChainData", mock.Anything, testData, mockTx).Return(nil)
-
-				mockTx.On("Commit").Return(nil)
+				mockDB.On("StoreOffChainData", mock.Anything, testData).Return(nil)
 
 				return mockDB
 			},
@@ -230,13 +349,75 @@ func Test_store(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			testDB := tt.db(t)
 
-			if err := store(testDB, tt.data); tt.wantErr {
+			if err := storeOffchainData(context.Background(), testDB, tt.data); tt.wantErr {
 				require.ErrorIs(t, err, testError)
 			} else {
 				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func Test_detectOffchainDataGaps(t *testing.T) {
+	t.Parallel()
+
+	testError := errors.New("test error")
+
+	tests := []struct {
+		name    string
+		db      func(t *testing.T) db.DB
+		gaps    map[uint64]uint64
+		wantErr bool
+	}{
+		{
+			name: "DetectOffchainDataGaps returns error",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("DetectOffchainDataGaps", mock.Anything).Return(nil, testError)
+
+				return mockDB
+			},
+			gaps:    nil,
+			wantErr: true,
+		},
+		{
+			name: "all good",
+			db: func(t *testing.T) db.DB {
+				t.Helper()
+
+				mockDB := mocks.NewDB(t)
+
+				mockDB.On("DetectOffchainDataGaps", mock.Anything).Return(map[uint64]uint64{1: 3}, nil)
+
+				return mockDB
+			},
+			gaps:    map[uint64]uint64{1: 3},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			testDB := tt.db(t)
+
+			if gaps, err := detectOffchainDataGaps(context.Background(), testDB); tt.wantErr {
+				require.ErrorIs(t, err, testError)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.gaps, gaps)
 			}
 		})
 	}
