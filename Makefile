@@ -53,7 +53,7 @@ GOBASE := $(shell pwd)
 GOBIN := $(GOBASE)/dist
 GOOS := $(shell uname -s  | tr '[:upper:]' '[:lower:]')
 GOENVVARS := GOBIN=$(GOBIN) CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH)
-GOBINARY := cdk-data-availability
+GOBINARY := xlayer-data-availability
 GOCMD := $(GOBASE)/cmd
 
 LDFLAGS += -X 'github.com/0xPolygon/cdk-data-availability.Version=$(VERSION)'

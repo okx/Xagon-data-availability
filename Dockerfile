@@ -14,7 +14,7 @@ RUN make build
 # CONTAINER FOR RUNNING BINARY
 FROM alpine:3.16.0
 
-COPY --from=build /go/src/github.com/0xPolygon/cdk-data-availability/dist/cdk-data-availability /app/cdk-data-availability
+COPY --from=build /go/src/github.com/0xPolygon/cdk-data-availability/dist/xlayer-data-availability /app/xlayer-data-availability
 
 EXPOSE 8444
 
