@@ -162,7 +162,7 @@ func start(cliCtx *cli.Context) error {
 			},
 			{
 				Name:    datacom.APIDATACOM,
-				Service: datacom.NewEndpoints(storage, pk, sequencerTracker, common.Address{}),
+				Service: datacom.NewEndpoints(storage, pk, sequencerTracker, c.PermitApiAddress),
 			},
 		},
 	)
