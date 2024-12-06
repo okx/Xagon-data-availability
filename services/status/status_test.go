@@ -30,11 +30,13 @@ func TestEndpoints_GetStatus(t *testing.T) {
 			name:                  "failed to count offchain data",
 			countOffchainDataErr:  errors.New("test error"),
 			getLastProcessedBlock: 2,
+			expectedError:         errors.New("failed to retrieve data from the storage"),
 		},
 		{
 			name:                     "failed to count offchain data and last processed block",
 			countOffchainDataErr:     errors.New("test error"),
 			getLastProcessedBlockErr: errors.New("test error"),
+			expectedError:            errors.New("failed to retrieve data from the storage"),
 		},
 	}
 
@@ -50,13 +52,9 @@ func TestEndpoints_GetStatus(t *testing.T) {
 				Return(tt.countOffchainData, tt.countOffchainDataErr)
 
 			dbMock.On("GetLastProcessedBlock", mock.Anything, mock.Anything).
-				Return(tt.getLastProcessedBlock, tt.getLastProcessedBlockErr)
+				Return(tt.getLastProcessedBlock, tt.getLastProcessedBlockErr).Maybe()
 
-			gapDetectorMock := mocks.NewGapsDetector(t)
-
-			gapDetectorMock.On("Gaps").Return(map[uint64]uint64{1: 1})
-
-			statusEndpoints := NewEndpoints(dbMock, gapDetectorMock)
+			statusEndpoints := NewEndpoints(dbMock)
 
 			actual, err := statusEndpoints.GetStatus()
 
@@ -72,8 +70,7 @@ func TestEndpoints_GetStatus(t *testing.T) {
 				require.NotEmpty(t, dacStatus.Uptime)
 				require.Equal(t, "v0.1.0", dacStatus.Version)
 				require.Equal(t, tt.countOffchainData, dacStatus.KeyCount)
-				require.Equal(t, tt.getLastProcessedBlock, dacStatus.BackfillProgress)
-				require.True(t, dacStatus.OffchainDataGapsExist)
+				require.Equal(t, tt.getLastProcessedBlock, dacStatus.LastSynchronizedBlock)
 			}
 		})
 	}

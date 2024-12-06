@@ -28,12 +28,12 @@ func TestClient_GetStatus(t *testing.T) {
 	}{
 		{
 			name:   "successfully got status",
-			result: `{"result":{"version":"v1.0.0","uptime":"123","key_count":2,"backfill_progress":5}}`,
+			result: `{"result":{"version":"v1.0.0","uptime":"123","key_count":2,"last_synchronized_block":5}}`,
 			status: &types.DACStatus{
-				Uptime:           "123",
-				Version:          "v1.0.0",
-				KeyCount:         2,
-				BackfillProgress: 5,
+				Uptime:                "123",
+				Version:               "v1.0.0",
+				KeyCount:              2,
+				LastSynchronizedBlock: 5,
 			},
 		},
 		{
@@ -251,7 +251,7 @@ func TestClient_ListOffChainData(t *testing.T) {
 		err        error
 	}{
 		{
-			name:   "successfully got offhcain data",
+			name:   "successfully got offchain data",
 			hashes: []common.Hash{common.BytesToHash([]byte("hash"))},
 			result: fmt.Sprintf(`{"result":{"%s":"%s"}}`,
 				common.BytesToHash([]byte("hash")).Hex(), hex.EncodeToString([]byte("offchaindata"))),
